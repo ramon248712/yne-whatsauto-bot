@@ -1,4 +1,4 @@
-<?php 
+<?php
 // Configuración
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 ini_set('display_errors', 0);
@@ -19,7 +19,7 @@ if (strlen($sender) < 11) exit(json_encode(["reply" => ""]));
 $visitas = [];
 if (file_exists("visitas.csv")) {
     $fp = fopen("visitas.csv", "r");
-    while (($linea = fgetcsv($fp, 0, ";")) !== false) {
+    while (($linea = fgetcsv($fp)) !== false) {
         if (isset($linea[0], $linea[1])) {
             $visitas[$linea[0]] = $linea[1];
         }
@@ -31,7 +31,7 @@ if (file_exists("visitas.csv")) {
 function buscarDeudor($telefono) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
-    while (($datos = fgetcsv($archivo, 0, ";")) !== false) {
+    while (($datos = fgetcsv($archivo)) !== false) {
         if (count($datos) >= 4 && trim($datos[2]) === $telefono) {
             fclose($archivo);
             return [
@@ -51,7 +51,7 @@ function registrarVisita($telefono) {
     $visitas = [];
     if (file_exists("visitas.csv")) {
         $fp = fopen("visitas.csv", "r");
-        while (($linea = fgetcsv($fp, 0, ";")) !== false) {
+        while (($linea = fgetcsv($fp)) !== false) {
             if (isset($linea[0], $linea[1])) {
                 $visitas[$linea[0]] = $linea[1];
             }
@@ -61,7 +61,7 @@ function registrarVisita($telefono) {
     $visitas[$telefono] = date("Y-m-d");
     $fp = fopen("visitas.csv", "w");
     foreach ($visitas as $num => $fecha) {
-        fputcsv($fp, [$num, $fecha], ";");
+        fputcsv($fp, [$num, $fecha]);
     }
     fclose($fp);
 }
@@ -156,7 +156,7 @@ if (strpos($msg, 'gracia') !== false) {
         $fp = fopen("deudores.csv", "r+");
         $lineas = [];
         $deudor = null;
-        while (($linea = fgetcsv($fp, 0, ";")) !== false) {
+        while (($linea = fgetcsv($fp)) !== false) {
             if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
                 $linea[2] = $sender;
                 $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
@@ -166,7 +166,7 @@ if (strpos($msg, 'gracia') !== false) {
         fclose($fp);
         $fp = fopen("deudores.csv", "w");
         foreach ($lineas as $l) {
-            fputcsv($fp, $l, ";");
+            fputcsv($fp, $l);
         }
         fclose($fp);
 
