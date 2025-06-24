@@ -1,10 +1,8 @@
 <?php
-ob_start(); // Evita salidas antes del JSON
-error_reporting(E_ERROR); // Solo muestra errores fatales
-
+ob_start(); // Evita que warnings o espacios rompan el JSON
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 
-// Capturar datos del POST
+// Capturar datos POST
 $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = $_POST["message"] ?? "";
@@ -23,7 +21,7 @@ if (file_exists("visitas.csv")) {
     fclose($fp);
 }
 
-// Buscar deudor
+// Buscar deudor por celular
 function buscarDeudor($telefono) {
     $archivo = fopen("deudores.csv", "r");
     while (($datos = fgetcsv($archivo, 0, ";")) !== false) {
@@ -60,7 +58,7 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
-// Saludo por hora
+// Saludo según hora
 function horaSaludo() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -68,7 +66,7 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes de respuestas
+// Respuestas aleatorias
 function respuestaGracias() {
     $opciones = [
         "De nada, estamos para ayudarte.", "Un placer ayudarte.",
@@ -106,17 +104,7 @@ function respuestaUrgencia() {
         "Le recordamos que debe abonar ingresando saldo en Ualá para regularizar su situación.",
         "Evite gestiones adicionales ingresando dinero en su cuenta Ualá.",
         "Cumplimos en informarle que debe cargar fondos hoy mismo en la app.",
-        "Le informamos que sigue activa su deuda, regularícela ingresando saldo en Ualá.",
-        "Evite consecuencias ingresando dinero cuanto antes en su cuenta.",
-        "Le solicitamos que abone cargando saldo a través de la app de Ualá.",
-        "Ingrese saldo a su CVU desde Ualá para evitar complicaciones.",
-        "Para evitar problemas mayores, transfiera desde su app de Ualá.",
-        "Cargue dinero en Ualá a la brevedad para evitar gestiones posteriores.",
-        "Debe realizar una carga en su app para resolver su deuda.",
-        "Saldar la deuda es simple: cargue su cuenta desde Ualá.",
-        "Le recordamos ingresar cualquier monto disponible hoy mismo.",
-        "Cumpla con el ingreso de saldo para evitar mayores complicaciones.",
-        "La solución es inmediata: transfiera desde su app de Ualá."
+        "Le informamos que sigue activa su deuda, regularícela ingresando saldo en Ualá."
     ];
     return $opciones[array_rand($opciones)];
 }
@@ -126,7 +114,7 @@ $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($sender);
 
-// Lógica de respuesta
+// Lógica principal
 if (strpos($msg, 'gracia') !== false) {
     $respuesta = respuestaGracias();
 } elseif (strpos($msg, 'cuota') !== false || strpos($msg, 'refinanciar') !== false || strpos($msg, 'plan') !== false) {
@@ -145,6 +133,7 @@ if (strpos($msg, 'gracia') !== false) {
         $respuesta = respuestaUrgencia();
     }
 } elseif (preg_match('/\d{7,9}/', $msg, $coincidencia)) {
+    // Buscar por DNI
     $dniIngresado = $coincidencia[0];
     $fp = fopen("deudores.csv", "r+");
     $lineas = [];
@@ -180,12 +169,9 @@ if (strpos($msg, 'gracia') !== false) {
 // Guardar historial
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 
-// Enviar respuesta
+// Enviar respuesta JSON
 header('Content-Type: application/json');
 echo json_encode(["reply" => $respuesta]);
-ob_end_flush(); // Final del buffer
+ob_end_flush();
 exit;
 ?>
----
-
-¿Querés que lo llevemos a una API REST más profesional? ¿O lo querés extender con emojis, audios o respuestas según repeticiones? Lo hacemos paso a paso si querés.
