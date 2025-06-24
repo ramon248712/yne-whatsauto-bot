@@ -1,5 +1,10 @@
 <?php
+// Configuración
 date_default_timezone_set("America/Argentina/Buenos_Aires");
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
+header('Content-Type: application/json');
 
 // Capturar datos del POST
 $app = $_POST["app"] ?? "";
@@ -8,24 +13,26 @@ $message = $_POST["message"] ?? "";
 
 // Limpiar número
 $sender = preg_replace('/\D/', '', $sender);
-if (strlen($sender) < 11) exit;
+if (strlen($sender) < 11) exit(json_encode(["reply" => ""]));
 
 // Cargar historial diario
 $visitas = [];
 if (file_exists("visitas.csv")) {
     $fp = fopen("visitas.csv", "r");
     while (($linea = fgetcsv($fp)) !== false) {
-        $visitas[$linea[0]] = $linea[1];
+        if (isset($linea[0], $linea[1])) {
+            $visitas[$linea[0]] = $linea[1];
+        }
     }
     fclose($fp);
 }
 
 // Buscar deudor
 function buscarDeudor($telefono) {
+    if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
     while (($datos = fgetcsv($archivo)) !== false) {
-        if (count($datos) < 4) continue;
-        if (trim($datos[2]) === $telefono) {
+        if (count($datos) >= 4 && trim($datos[2]) === $telefono) {
             fclose($archivo);
             return [
                 "nombre" => $datos[0],
@@ -45,7 +52,9 @@ function registrarVisita($telefono) {
     if (file_exists("visitas.csv")) {
         $fp = fopen("visitas.csv", "r");
         while (($linea = fgetcsv($fp)) !== false) {
-            $visitas[$linea[0]] = $linea[1];
+            if (isset($linea[0], $linea[1])) {
+                $visitas[$linea[0]] = $linea[1];
+            }
         }
         fclose($fp);
     }
@@ -123,7 +132,7 @@ $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($sender);
 
-// Excepciones primero
+// Respuesta según contenido
 if (strpos($msg, 'gracia') !== false) {
     $respuesta = respuestaGracias();
 } elseif (strpos($msg, 'cuota') !== false || strpos($msg, 'refinanciar') !== false || strpos($msg, 'plan') !== false) {
@@ -142,34 +151,36 @@ if (strpos($msg, 'gracia') !== false) {
         $respuesta = respuestaUrgencia();
     }
 } elseif (preg_match('/\d{7,9}/', $msg, $coincidencia)) {
-    // Buscó por DNI
     $dniIngresado = $coincidencia[0];
-    $fp = fopen("deudores.csv", "r+");
-    $lineas = [];
-    $deudor = null;
-    while (($linea = fgetcsv($fp)) !== false) {
-        if (count($linea) < 4) continue;
-        if (trim($linea[1]) === $dniIngresado) {
-            $linea[2] = $sender; // actualizar teléfono
-            $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
+    if (file_exists("deudores.csv")) {
+        $fp = fopen("deudores.csv", "r+");
+        $lineas = [];
+        $deudor = null;
+        while (($linea = fgetcsv($fp)) !== false) {
+            if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
+                $linea[2] = $sender;
+                $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
+            }
+            $lineas[] = $linea;
         }
-        $lineas[] = $linea;
-    }
-    fclose($fp);
-    $fp = fopen("deudores.csv", "w");
-    foreach ($lineas as $l) {
-        fputcsv($fp, $l);
-    }
-    fclose($fp);
+        fclose($fp);
+        $fp = fopen("deudores.csv", "w");
+        foreach ($lineas as $l) {
+            fputcsv($fp, $l);
+        }
+        fclose($fp);
 
-    if ($deudor) {
-        $nombre = ucfirst(strtolower($deudor["nombre"]));
-        $monto = $deudor["deuda"];
-        $saludo = horaSaludo();
-        $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
-        registrarVisita($sender);
+        if ($deudor) {
+            $nombre = ucfirst(strtolower($deudor["nombre"]));
+            $monto = $deudor["deuda"];
+            $saludo = horaSaludo();
+            $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
+            registrarVisita($sender);
+        } else {
+            $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podés verificar si está bien escrito?";
+        }
     } else {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podés verificar si está bien escrito?";
+        $respuesta = "No se encuentra el archivo de deudores.";
     }
 } else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
@@ -178,8 +189,7 @@ if (strpos($msg, 'gracia') !== false) {
 // Guardar historial
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 
-// Enviar respuesta
-header('Content-Type: application/json');
+// Respuesta final
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
