@@ -1,4 +1,7 @@
 <?php
+ob_start(); // Evita salidas antes del JSON
+error_reporting(E_ERROR); // Solo muestra errores fatales
+
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 
 // Capturar datos del POST
@@ -65,7 +68,7 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes
+// Variantes de respuestas
 function respuestaGracias() {
     $opciones = [
         "De nada, estamos para ayudarte.", "Un placer ayudarte.",
@@ -118,12 +121,12 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// --- Procesar mensaje ---
+// Procesar mensaje
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($sender);
 
-// Excepciones primero
+// Lógica de respuesta
 if (strpos($msg, 'gracia') !== false) {
     $respuesta = respuestaGracias();
 } elseif (strpos($msg, 'cuota') !== false || strpos($msg, 'refinanciar') !== false || strpos($msg, 'plan') !== false) {
@@ -142,7 +145,6 @@ if (strpos($msg, 'gracia') !== false) {
         $respuesta = respuestaUrgencia();
     }
 } elseif (preg_match('/\d{7,9}/', $msg, $coincidencia)) {
-    // Buscó por DNI
     $dniIngresado = $coincidencia[0];
     $fp = fopen("deudores.csv", "r+");
     $lineas = [];
@@ -150,7 +152,7 @@ if (strpos($msg, 'gracia') !== false) {
     while (($linea = fgetcsv($fp, 0, ";")) !== false) {
         if (count($linea) < 4) continue;
         if (trim($linea[1]) === $dniIngresado) {
-            $linea[2] = $sender; // actualizar teléfono
+            $linea[2] = $sender;
             $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
         }
         $lineas[] = $linea;
@@ -181,5 +183,9 @@ file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n
 // Enviar respuesta
 header('Content-Type: application/json');
 echo json_encode(["reply" => $respuesta]);
+ob_end_flush(); // Final del buffer
 exit;
 ?>
+---
+
+¿Querés que lo llevemos a una API REST más profesional? ¿O lo querés extender con emojis, audios o respuestas según repeticiones? Lo hacemos paso a paso si querés.
