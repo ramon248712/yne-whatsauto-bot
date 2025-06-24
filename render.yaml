@@ -1,0 +1,12 @@
+# render.yaml
+services:
+  - type: web
+    name: whatauto-server
+    env: docker
+    repo: https://github.com/ramon248712/yne-whatsauto-bot
+    plan: free
+    branch: main
+    dockerfilePath: Dockerfile
+    buildCommand: ""
+    startCommand: "php -S 0.0.0.0:10000"
+    autoDeploy: true
