@@ -27,19 +27,19 @@ if (file_exists("visitas.csv")) {
     fclose($fp);
 }
 
-// Buscar deudor
+// Buscar deudor (formato: nombre;dni;teléfono;deuda)
 function buscarDeudor($telefono) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
-    while (($datos = fgetcsv($archivo)) !== false) {
+    while (($datos = fgetcsv($archivo, 0, ";")) !== false) {
         if (count($datos) >= 4) {
-            $numeroCsv = preg_replace('/\D/', '', $datos[2]);
-            if (substr($telefono, -8) === substr($numeroCsv, -8)) {
+            $tel = preg_replace('/\D/', '', $datos[2]);
+            if (substr($tel, -8) === substr($telefono, -8)) {
                 fclose($archivo);
                 return [
                     "nombre" => $datos[0],
                     "dni" => $datos[1],
-                    "telefono" => $datos[2],
+                    "telefono" => $tel,
                     "deuda" => $datos[3]
                 ];
             }
@@ -77,14 +77,14 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes de respuesta
+// Variantes
 function respuestaGracias() {
     $opciones = [
-        "De nada, estamos para ayudarte.", "Un placer ayudarte.", "Con gusto.",
-        "Siempre a disposición.", "Gracias a vos por comunicarte.", "Estamos para ayudarte.",
-        "Un gusto poder colaborar.", "Cualquier cosa, escribinos.", "Para eso estamos.",
-        "Lo que necesites, consultanos.", "No hay de qué.", "A disposición siempre.",
-        "Quedamos atentos.", "Nos alegra ayudarte."
+        "De nada, estamos para ayudarte.", "Un placer ayudarte.",
+        "Con gusto.", "Siempre a disposición.", "Gracias a vos por comunicarte.",
+        "Estamos para ayudarte.", "Un gusto poder colaborar.",
+        "Cualquier cosa, escribinos.", "Para eso estamos.", "Lo que necesites, consultanos.",
+        "No hay de qué.", "A disposición siempre.", "Quedamos atentos.", "Nos alegra ayudarte."
     ];
     return $opciones[array_rand($opciones)];
 }
@@ -120,7 +120,7 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// --- Procesar mensaje ---
+// Procesar mensaje
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($sender);
@@ -145,10 +145,10 @@ if (strpos($msg, 'gracia') !== false) {
 } elseif (preg_match('/\d{7,9}/', $msg, $coincidencia)) {
     $dniIngresado = $coincidencia[0];
     if (file_exists("deudores.csv")) {
-        $fp = fopen("deudores.csv", "r+");
+        $fp = fopen("deudores.csv", "r");
         $lineas = [];
         $deudor = null;
-        while (($linea = fgetcsv($fp)) !== false) {
+        while (($linea = fgetcsv($fp, 0, ";")) !== false) {
             if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
                 $linea[2] = $sender;
                 $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
@@ -158,7 +158,7 @@ if (strpos($msg, 'gracia') !== false) {
         fclose($fp);
         $fp = fopen("deudores.csv", "w");
         foreach ($lineas as $l) {
-            fputcsv($fp, $l);
+            fputcsv($fp, $l, ";");
         }
         fclose($fp);
 
@@ -184,4 +184,3 @@ file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n
 // Respuesta final
 echo json_encode(["reply" => $respuesta]);
 exit;
-?>
