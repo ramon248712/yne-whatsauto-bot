@@ -1,4 +1,4 @@
-<?php
+<?php 
 // Configuración
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 ini_set('display_errors', 0);
@@ -13,7 +13,7 @@ $message = $_POST["message"] ?? "";
 
 // Limpiar número
 $sender = preg_replace('/\D/', '', $sender);
-if (strlen($sender) < 11) exit(json_encode(["reply" => ""]));
+if (strlen($sender) < 8) exit(json_encode(["reply" => ""]));
 
 // Cargar historial diario
 $visitas = [];
@@ -32,14 +32,17 @@ function buscarDeudor($telefono) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
     while (($datos = fgetcsv($archivo)) !== false) {
-        if (count($datos) >= 4 && trim($datos[2]) === $telefono) {
-            fclose($archivo);
-            return [
-                "nombre" => $datos[0],
-                "dni" => $datos[1],
-                "telefono" => $datos[2],
-                "deuda" => $datos[3]
-            ];
+        if (count($datos) >= 4) {
+            $numeroCsv = preg_replace('/\D/', '', $datos[2]);
+            if (substr($telefono, -8) === substr($numeroCsv, -8)) {
+                fclose($archivo);
+                return [
+                    "nombre" => $datos[0],
+                    "dni" => $datos[1],
+                    "telefono" => $datos[2],
+                    "deuda" => $datos[3]
+                ];
+            }
         }
     }
     fclose($archivo);
@@ -74,14 +77,14 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes
+// Variantes de respuesta
 function respuestaGracias() {
     $opciones = [
-        "De nada, estamos para ayudarte.", "Un placer ayudarte.",
-        "Con gusto.", "Siempre a disposición.", "Gracias a vos por comunicarte.",
-        "Estamos para ayudarte.", "Un gusto poder colaborar.",
-        "Cualquier cosa, escribinos.", "Para eso estamos.", "Lo que necesites, consultanos.",
-        "No hay de qué.", "A disposición siempre.", "Quedamos atentos.", "Nos alegra ayudarte."
+        "De nada, estamos para ayudarte.", "Un placer ayudarte.", "Con gusto.",
+        "Siempre a disposición.", "Gracias a vos por comunicarte.", "Estamos para ayudarte.",
+        "Un gusto poder colaborar.", "Cualquier cosa, escribinos.", "Para eso estamos.",
+        "Lo que necesites, consultanos.", "No hay de qué.", "A disposición siempre.",
+        "Quedamos atentos.", "Nos alegra ayudarte."
     ];
     return $opciones[array_rand($opciones)];
 }
@@ -112,17 +115,7 @@ function respuestaUrgencia() {
         "Le recordamos que debe abonar ingresando saldo en Ualá para regularizar su situación.",
         "Evite gestiones adicionales ingresando dinero en su cuenta Ualá.",
         "Cumplimos en informarle que debe cargar fondos hoy mismo en la app.",
-        "Le informamos que sigue activa su deuda, regularícela ingresando saldo en Ualá.",
-        "Evite consecuencias ingresando dinero cuanto antes en su cuenta.",
-        "Le solicitamos que abone cargando saldo a través de la app de Ualá.",
-        "Ingrese saldo a su CVU desde Ualá para evitar complicaciones.",
-        "Para evitar problemas mayores, transfiera desde su app de Ualá.",
-        "Cargue dinero en Ualá a la brevedad para evitar gestiones posteriores.",
-        "Debe realizar una carga en su app para resolver su deuda.",
-        "Saldar la deuda es simple: cargue su cuenta desde Ualá.",
-        "Le recordamos ingresar cualquier monto disponible hoy mismo.",
-        "Cumpla con el ingreso de saldo para evitar mayores complicaciones.",
-        "La solución es inmediata: transfiera desde su app de Ualá."
+        "Le informamos que sigue activa su deuda, regularícela ingresando saldo en Ualá."
     ];
     return $opciones[array_rand($opciones)];
 }
@@ -132,7 +125,6 @@ $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($sender);
 
-// Respuesta según contenido
 if (strpos($msg, 'gracia') !== false) {
     $respuesta = respuestaGracias();
 } elseif (strpos($msg, 'cuota') !== false || strpos($msg, 'refinanciar') !== false || strpos($msg, 'plan') !== false) {
