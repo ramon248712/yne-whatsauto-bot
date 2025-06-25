@@ -6,6 +6,23 @@ error_reporting(0);
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 header('Content-Type: application/json');
 
+// Registrar datos crudos del POST para debug
+file_put_contents("debug_post.txt", date("Y-m-d H:i:s") . " | " . print_r($_POST, true) . "\n", FILE_APPEND);
+
+// Datos del POST
+$app = $_POST["app"] ?? "";
+$sender = $_POST["sender"] ?? "";
+$message = strtolower(trim($_POST["message"] ?? ""));
+$sender = preg_replace('/\D/', '', $sender);
+
+<?php
+// Configuración general
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
+date_default_timezone_set("America/Argentina/Buenos_Aires");
+header('Content-Type: application/json');
+
 // Datos del POST
 $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
