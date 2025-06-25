@@ -19,13 +19,17 @@ $telefonoConPrefijo = "+549" . $telefonoBase;
 if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
 // Ver si el número fue marcado como equivocado y debe eliminarse
+$numerosEliminados = [];
 if (file_exists("modificaciones.csv")) {
     foreach (file("modificaciones.csv") as $linea) {
         $cols = str_getcsv($linea);
-        if (count($cols) >= 2 && $cols[0] === "eliminar" && $cols[1] === $telefonoConPrefijo) {
-            echo json_encode(["reply" => ""]);
-            exit;
+        if (count($cols) >= 2 && $cols[0] === "eliminar") {
+            $numerosEliminados[] = $cols[1];
         }
+    }
+    if (in_array($telefonoConPrefijo, $numerosEliminados)) {
+        echo json_encode(["reply" => ""]);
+        exit;
     }
 }
 
@@ -142,6 +146,11 @@ $respuesta = "";
 if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
+    fclose($fp);
+    // Eliminar también de visitas.csv
+    unset($visitas[$telefonoConPrefijo]);
+    $fp = fopen("visitas.csv", "w");
+    foreach ($visitas as $t => $f) fputcsv($fp, [$t, $f]);
     fclose($fp);
     echo json_encode(["reply" => "Entendido. Eliminamos tu número de nuestra base de gestión."]);
     exit;
