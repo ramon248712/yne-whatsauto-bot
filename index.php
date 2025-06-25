@@ -36,12 +36,13 @@ function buscarDeudor($telefono10) {
     while (($datos = fgetcsv($archivo)) !== false) {
         if (count($datos) >= 4) {
             $numeroCsv = preg_replace('/\D/', '', $datos[2]);
-            if ($numeroCsv === $telefono10) {
+            $numeroCsv10 = substr($numeroCsv, -10);
+            if ($numeroCsv10 === $telefono10) {
                 fclose($archivo);
                 return [
                     "nombre" => $datos[0],
                     "dni" => $datos[1],
-                    "telefono" => $numeroCsv,
+                    "telefono" => $numeroCsv10,
                     "deuda" => $datos[3]
                 ];
             }
