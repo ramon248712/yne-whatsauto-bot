@@ -11,12 +11,11 @@ $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = $_POST["message"] ?? "";
 
-// Limpiar número y normalizar
+// Normalizar número
 $sender = preg_replace('/\D/', '', $sender);
 if (strlen($sender) < 8) exit(json_encode(["reply" => ""]));
-
-$numero10 = substr($sender, -10); // Los 10 dígitos reales
-$senderCompleto = "+549$numero10"; // Formato internacional
+$numero10 = substr($sender, -10);
+$senderCompleto = "+549$numero10";
 
 // Cargar historial diario
 $visitas = [];
@@ -36,13 +35,13 @@ function buscarDeudor($telefono10) {
     $archivo = fopen("deudores.csv", "r");
     while (($datos = fgetcsv($archivo)) !== false) {
         if (count($datos) >= 4) {
-            $numeroCsv = preg_replace('/\D/', '', $datos[2]); // Números en CSV
+            $numeroCsv = preg_replace('/\D/', '', $datos[2]);
             if ($numeroCsv === $telefono10) {
                 fclose($archivo);
                 return [
                     "nombre" => $datos[0],
                     "dni" => $datos[1],
-                    "telefono" => $datos[2],
+                    "telefono" => $numeroCsv,
                     "deuda" => $datos[3]
                 ];
             }
@@ -123,7 +122,7 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// --- Procesar mensaje ---
+// Procesar mensaje
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($numero10);
@@ -138,6 +137,7 @@ if (strpos($msg, 'gracia') !== false) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
     $yaSaludoHoy = isset($visitas[$senderCompleto]) && $visitas[$senderCompleto] === $hoy;
+
     if (!$yaSaludoHoy) {
         $saludo = horaSaludo();
         $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
@@ -153,7 +153,7 @@ if (strpos($msg, 'gracia') !== false) {
         $deudor = null;
         while (($linea = fgetcsv($fp)) !== false) {
             if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
-                $linea[2] = $numero10; // Guardamos solo los 10 dígitos en el CSV
+                $linea[2] = $numero10;
                 $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $numero10, "deuda" => $linea[3]];
             }
             $lineas[] = $linea;
