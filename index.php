@@ -159,10 +159,13 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
         $lines[] = $line;
     }
     fclose($fp);
+    $fp = fopen("deudores.csv", "w");
+    foreach ($lines as $l) fputcsv($fp, $l);
+    fclose($fp);
+    $fp = fopen("modificaciones.csv", "a");
+    fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
+    fclose($fp);
     if ($encontrado) {
-        $fp = fopen("deudores.csv", "w");
-        foreach ($lines as $l) fputcsv($fp, $l);
-        fclose($fp);
         $nombre = ucfirst(strtolower($encontrado["nombre"]));
         $saludo = saludoHora();
         $monto = $encontrado["deuda"];
