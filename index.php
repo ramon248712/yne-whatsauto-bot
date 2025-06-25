@@ -18,6 +18,23 @@ if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
     exit;
 }
 
+// Normalización del número a formato CSV (solo los 10 dígitos finales)
+$telefonoBase = substr($sender, -10);
+$telefonoConPrefijo = "+549" . $telefonoBase;
+
+if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
+
+// Ver si el número fue marcado como equivocado y debe eliminarse
+if (file_exists("modificaciones.csv")) {
+    foreach (file("modificaciones.csv") as $linea) {
+        $cols = str_getcsv($linea);
+        if (count($cols) >= 2 && $cols[0] === "eliminar" && $cols[1] === $telefonoConPrefijo) {
+            echo json_encode(["reply" => ""]);
+            exit;
+        }
+    }
+}
+
 // Detección de audio
 if ($message === "" || in_array($message, ["audio", "[audio]", "mensaje de voz"])) {
     $respuestasAudio = [
@@ -30,12 +47,6 @@ if ($message === "" || in_array($message, ["audio", "[audio]", "mensaje de voz"]
     echo json_encode(["reply" => $respuestasAudio[array_rand($respuestasAudio)]]);
     exit;
 }
-
-// Normalización del número a formato CSV (solo los 10 dígitos finales)
-$telefonoBase = substr($sender, -10);
-$telefonoConPrefijo = "+549" . $telefonoBase;
-
-if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
 // Saludo según la hora
 function saludoHora() {
@@ -128,21 +139,18 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
-// Ver si el número fue marcado como equivocado y debe eliminarse
+// --- Lógica principal ---
+$deudor = buscarDeudor($telefonoConPrefijo);
+$hoy = date("Y-m-d");
+$respuesta = "";
+
 if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
     echo json_encode(["reply" => "Entendido. Eliminamos tu número de nuestra base de gestión."]);
     exit;
-}
-
-// --- Lógica principal ---
-$deudor = buscarDeudor($telefonoConPrefijo);
-$hoy = date("Y-m-d");
-$respuesta = "";
-
-if (contiene($message, ["gracia", "gracias", "graciah"])) {
+} elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = respuestaGracias();
 } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "plan", "acuerdo"])) {
     $respuesta = respuestaNoCuotas();
