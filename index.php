@@ -8,11 +8,14 @@ $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = $_POST["message"] ?? "";
 
-// Normalizar número entrante (solo 10 dígitos finales)
+// Normalizar número entrante
 $sender = preg_replace('/\D/', '', $sender);
 if (strlen($sender) < 8) exit(json_encode(["reply" => ""]));
 $numero10 = substr($sender, -10);
 $senderCompleto = "+549$numero10";
+
+// LOG: qué número llega
+file_put_contents("debug_numero.txt", date("Y-m-d H:i") . " | recibido: $sender | numero10: $numero10\n", FILE_APPEND);
 
 // Cargar visitas
 $visitas = [];
@@ -26,7 +29,7 @@ if (file_exists("visitas.csv")) {
     fclose($fp);
 }
 
-// Buscar deudor en CSV codificado en latin1
+// Buscar deudor
 function buscarDeudor($telefono10) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
@@ -34,6 +37,10 @@ function buscarDeudor($telefono10) {
         if (count($datos) >= 4) {
             $numeroCsv = preg_replace('/\D/', '', $datos[2]);
             $numeroCsv10 = substr($numeroCsv, -10);
+
+            // LOG: comparación de búsqueda
+            file_put_contents("debug_busqueda.txt", date("Y-m-d H:i") . " | busco: $telefono10 | chequeo: $numeroCsv10\n", FILE_APPEND);
+
             if ($numeroCsv10 === $telefono10) {
                 fclose($archivo);
                 return [
@@ -117,7 +124,7 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// --- Procesar mensaje ---
+// Procesamiento del mensaje
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($numero10);
@@ -179,7 +186,6 @@ if (strpos($msg, 'gracia') !== false) {
 // Guardar historial
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $senderCompleto => $message\n", FILE_APPEND);
 
-// Respuesta final
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
