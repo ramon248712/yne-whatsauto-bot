@@ -33,22 +33,18 @@ if (file_exists("modificaciones.csv")) {
     }
 }
 
-// Validación básica del mensaje
-if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
-    echo json_encode(["reply" => ""]);
+// Detección de audio o ruido irrelevante
+$audioDetectado = in_array($message, ["audio", "[audio]", "mensaje de voz", "nota de voz", "voice", "audio nota"]);
+$mensajeRuido = (strlen($message) <= 3 && !preg_match('/\d/', $message) && preg_match('/[^a-zA-Z0-9]/', $message));
+
+if ($audioDetectado || $mensajeRuido) {
+    echo json_encode(["reply" => "No puedo escucharlo en este momento, ¿podrás escribirlo?"]);
     exit;
 }
 
-// Detección de audio
-if ($message === "" || in_array($message, ["audio", "[audio]", "mensaje de voz"])) {
-    $respuestasAudio = [
-        "Escribinos por texto así podemos ayudarte mejor.",
-        "Para poder asistirte, necesitamos que nos escribas. No procesamos audios.",
-        "Te pedimos que lo escribas por acá, no podemos escuchar audios.",
-        "Para darte una respuesta clara, necesitamos que escribas tu mensaje.",
-        "Mandanos tu consulta por escrito así lo vemos al instante."
-    ];
-    echo json_encode(["reply" => $respuestasAudio[array_rand($respuestasAudio)]]);
+// Validación básica del mensaje
+if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
+    echo json_encode(["reply" => ""]);
     exit;
 }
 
