@@ -1,23 +1,20 @@
-<?php 
-// Configuración
+<?php
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
 error_reporting(0);
 header('Content-Type: application/json');
 
-// Capturar datos del POST
 $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = $_POST["message"] ?? "";
 
-// Normalizar número
+// Normalizar número entrante (solo 10 dígitos finales)
 $sender = preg_replace('/\D/', '', $sender);
 if (strlen($sender) < 8) exit(json_encode(["reply" => ""]));
 $numero10 = substr($sender, -10);
 $senderCompleto = "+549$numero10";
 
-// Cargar historial diario
+// Cargar visitas
 $visitas = [];
 if (file_exists("visitas.csv")) {
     $fp = fopen("visitas.csv", "r");
@@ -29,11 +26,11 @@ if (file_exists("visitas.csv")) {
     fclose($fp);
 }
 
-// Buscar deudor
+// Buscar deudor en CSV codificado en latin1
 function buscarDeudor($telefono10) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
-    while (($datos = fgetcsv($archivo)) !== false) {
+    while (($datos = fgetcsv($archivo, 0, ';')) !== false) {
         if (count($datos) >= 4) {
             $numeroCsv = preg_replace('/\D/', '', $datos[2]);
             $numeroCsv10 = substr($numeroCsv, -10);
@@ -43,7 +40,7 @@ function buscarDeudor($telefono10) {
                     "nombre" => $datos[0],
                     "dni" => $datos[1],
                     "telefono" => $numeroCsv10,
-                    "deuda" => $datos[3]
+                    "deuda" => str_replace(',', '.', $datos[3])
                 ];
             }
         }
@@ -52,8 +49,7 @@ function buscarDeudor($telefono10) {
     return null;
 }
 
-// Registrar visita
-function registrarVisita($telefonoCompleto) {
+function registrarVisita($telefono) {
     $visitas = [];
     if (file_exists("visitas.csv")) {
         $fp = fopen("visitas.csv", "r");
@@ -64,7 +60,7 @@ function registrarVisita($telefonoCompleto) {
         }
         fclose($fp);
     }
-    $visitas[$telefonoCompleto] = date("Y-m-d");
+    $visitas[$telefono] = date("Y-m-d");
     $fp = fopen("visitas.csv", "w");
     foreach ($visitas as $num => $fecha) {
         fputcsv($fp, [$num, $fecha]);
@@ -72,7 +68,6 @@ function registrarVisita($telefonoCompleto) {
     fclose($fp);
 }
 
-// Saludo por hora
 function horaSaludo() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -80,7 +75,6 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes de respuesta
 function respuestaGracias() {
     $opciones = [
         "De nada, estamos para ayudarte.", "Un placer ayudarte.", "Con gusto.",
@@ -123,7 +117,7 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// Procesar mensaje
+// --- Procesar mensaje ---
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
 $deudor = buscarDeudor($numero10);
@@ -152,17 +146,17 @@ if (strpos($msg, 'gracia') !== false) {
         $fp = fopen("deudores.csv", "r+");
         $lineas = [];
         $deudor = null;
-        while (($linea = fgetcsv($fp)) !== false) {
+        while (($linea = fgetcsv($fp, 0, ';')) !== false) {
             if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
                 $linea[2] = $numero10;
-                $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $numero10, "deuda" => $linea[3]];
+                $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $numero10, "deuda" => str_replace(',', '.', $linea[3])];
             }
             $lineas[] = $linea;
         }
         fclose($fp);
         $fp = fopen("deudores.csv", "w");
         foreach ($lineas as $l) {
-            fputcsv($fp, $l);
+            fputcsv($fp, $l, ';');
         }
         fclose($fp);
 
