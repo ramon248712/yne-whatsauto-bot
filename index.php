@@ -12,13 +12,13 @@ $sender = $_POST["sender"] ?? "";
 $message = strtolower(trim($_POST["message"] ?? ""));
 $sender = preg_replace('/\D/', '', $sender);
 
-// Normalización del número a formato CSV
+// Normalización del número a formato CSV (solo los 10 dígitos finales)
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
 
 if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
-// Ver si el número fue eliminado
+// Ver si el número fue marcado como equivocado y debe eliminarse
 $numerosEliminados = [];
 if (file_exists("modificaciones.csv")) {
     foreach (file("modificaciones.csv") as $linea) {
@@ -63,8 +63,6 @@ function registrarVisita($telefono) {
     foreach ($visitas as $t => $f) fputcsv($fp, [$t, $f]);
     fclose($fp);
 }
-
-$ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucía", "Santiago", "Ana", "Matías"];
 
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
@@ -125,7 +123,7 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
-// Lógica principal
+// --- Lógica principal ---
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
 $respuesta = "";
@@ -154,25 +152,14 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
     $yaSaludoHoy = isset($visitas[$telefonoConPrefijo]) && $visitas[$telefonoConPrefijo] === $hoy;
-
     if (!$yaSaludoHoy) {
         $saludo = saludoHora();
         $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
         registrarVisita($telefonoConPrefijo);
-    } elseif (contiene($message, ["quiero"])) {
-        $respuesta = "¿Con cuánto podrías comprometerte hoy para comenzar a saldar la deuda?";
-    } elseif (preg_match('/(puedo\s*(pagar|ingresar|depositar|transferir|poner)\s*\$?\s*)(\d{3,7})/', $message, $match)) {
-        $montoPago = (int)$match[3];
-        if ($montoPago >= 500) {
-            $respuesta = "Gracias. Podemos registrar $montoPago pesos como un pago a cuenta hoy. ¿Cuándo podrías completar el saldo?";
-            $fp = fopen("pagos.csv", "a");
-            fputcsv($fp, [$telefonoConPrefijo, date("Y-m-d"), $montoPago]);
-            fclose($fp);
-        }
     } else {
         $respuesta = respuestaUrgente();
     }
-} elseif (preg_match('/^\d{7,9}$/', $message, $coinc)) {
+} elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
     if (file_exists("deudores.csv")) {
         $fp = fopen("deudores.csv", "r");
@@ -200,10 +187,11 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
         }
     }
 } elseif (!$deudor) {
-    $respuesta = "Hola. Para continuar, necesitamos que nos indiques tu número de DNI.";
+    $respuesta = respuestaUrgente();
 }
 
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
+
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
