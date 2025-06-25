@@ -9,8 +9,14 @@ header('Content-Type: application/json');
 // Datos del POST
 $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
-$message = strtolower($_POST["message"] ?? "");
+$message = strtolower(trim($_POST["message"] ?? ""));
 $sender = preg_replace('/\D/', '', $sender);
+
+// Validación básica del mensaje
+if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
+    echo json_encode(["reply" => ""]);
+    exit;
+}
 
 // Normalización del número a formato CSV (solo los 10 dígitos finales)
 $telefonoBase = substr($sender, -10);
@@ -122,7 +128,7 @@ if (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = respuestaYaPago();
 } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "desempleado", "desocupado"])) {
     $respuesta = respuestaSinTrabajo();
-} elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar"])) {
+} elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
     $respuesta = respuestaProblemaApp();
 } elseif ($deudor) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
