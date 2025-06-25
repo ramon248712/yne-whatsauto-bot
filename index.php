@@ -12,13 +12,13 @@ $sender = $_POST["sender"] ?? "";
 $message = strtolower(trim($_POST["message"] ?? ""));
 $sender = preg_replace('/\D/', '', $sender);
 
-// Normalización del número a formato CSV (solo los 10 dígitos finales)
+// Normalización del número a formato CSV
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
 
 if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
-// Ver si el número fue marcado como equivocado y debe eliminarse
+// Ver si el número fue eliminado
 $numerosEliminados = [];
 if (file_exists("modificaciones.csv")) {
     foreach (file("modificaciones.csv") as $linea) {
@@ -64,7 +64,7 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
-$ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucia", "Santiago", "Ana", "Matias"];
+$ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucía", "Santiago", "Ana", "Matías"];
 
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
@@ -125,12 +125,11 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
-// --- Lógica principal ---
+// Lógica principal
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
 $respuesta = "";
 
-// Si el cliente escribe que es equivocado
 if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
@@ -162,7 +161,7 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
         registrarVisita($telefonoConPrefijo);
     } elseif (contiene($message, ["quiero"])) {
         $respuesta = "¿Con cuánto podrías comprometerte hoy para comenzar a saldar la deuda?";
-    } elseif (preg_match('/(puedo\s*(pagar|ingresar|transferir|poner|depositar)\s*\$?\s*)(\d{3,7})/', $message, $match)) {
+    } elseif (preg_match('/(puedo\s*(pagar|ingresar|depositar|transferir|poner)\s*\$?\s*)(\d{3,7})/', $message, $match)) {
         $montoPago = (int)$match[3];
         if ($montoPago >= 500) {
             $respuesta = "Gracias. Podemos registrar $montoPago pesos como un pago a cuenta hoy. ¿Cuándo podrías completar el saldo?";
