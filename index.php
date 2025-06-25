@@ -27,8 +27,10 @@ if (file_exists("modificaciones.csv")) {
     if (in_array($telefonoConPrefijo, $numerosEliminados)) exit(json_encode(["reply" => ""]));
 }
 
+// Filtro de mensajes vacíos o inválidos
 if (strlen($message) < 2 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) exit(json_encode(["reply" => ""]));
 
+// Saludo según hora
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -36,6 +38,7 @@ function saludoHora() {
     return "Buenas noches";
 }
 
+// Cargar visitas
 $visitas = [];
 if (file_exists("visitas.csv")) {
     foreach (file("visitas.csv") as $linea) {
@@ -111,10 +114,12 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
+// --- Lógica principal ---
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
 $respuesta = "";
 
+// Casos especiales
 if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
@@ -148,31 +153,38 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     }
 } elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
-    $fp = fopen("deudores.csv", "r");
-    $lines = [];
-    $encontrado = null;
-    while (($line = fgetcsv($fp)) !== false) {
-        if (count($line) >= 4 && trim($line[1]) == $dni) {
-            $line[2] = $telefonoConPrefijo;
-            $encontrado = ["nombre" => $line[0], "deuda" => $line[3], "dni" => $line[1]];
+    if (file_exists("deudores.csv")) {
+        $fp = fopen("deudores.csv", "r");
+        $lines = [];
+        $encontrado = null;
+        while (($line = fgetcsv($fp)) !== false) {
+            if (count($line) >= 4 && trim($line[1]) == $dni) {
+                $line[2] = $telefonoConPrefijo;
+                $encontrado = ["nombre" => $line[0], "deuda" => $line[3], "dni" => $line[1]];
+            }
+            $lines[] = $line;
         }
-        $lines[] = $line;
-    }
-    fclose($fp);
-    $fp = fopen("deudores.csv", "w");
-    foreach ($lines as $l) fputcsv($fp, $l);
-    fclose($fp);
-    $fp = fopen("modificaciones.csv", "a");
-    fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
-    fclose($fp);
-    if ($encontrado) {
-        $nombre = ucfirst(strtolower($encontrado["nombre"]));
-        $saludo = saludoHora();
-        $monto = $encontrado["deuda"];
-        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Ingrese saldo desde su app de Ualá para resolverlo.";
-        registrarVisita($telefonoConPrefijo);
-    } else {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
+        fclose($fp);
+
+        // Reescribir el CSV actualizado
+        $fp = fopen("deudores.csv", "w");
+        foreach ($lines as $l) fputcsv($fp, $l);
+        fclose($fp);
+
+        // Guardar la asociación en modificaciones.csv
+        $fp = fopen("modificaciones.csv", "a");
+        fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
+        fclose($fp);
+
+        if ($encontrado) {
+            $nombre = ucfirst(strtolower($encontrado["nombre"]));
+            $saludo = saludoHora();
+            $monto = $encontrado["deuda"];
+            $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Ingrese saldo desde su app de Ualá para resolverlo.";
+            registrarVisita($telefonoConPrefijo);
+        } else {
+            $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
+        }
     }
 } else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
