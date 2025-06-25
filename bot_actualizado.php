@@ -1,18 +1,19 @@
 <?php
-// Configuración general
+// Configuracion general
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 header('Content-Type: application/json');
 
+// Datos del POST
 $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = strtolower(trim($_POST["message"] ?? ""));
 $sender = preg_replace('/\D/', '', $sender);
+
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
-
 if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
 $numerosEliminados = [];
@@ -85,7 +86,11 @@ function respuestaGracias() {
 }
 
 function respuestaNoCuotas() {
-    $r = ["No trabajamos con cuotas ni planes. El ingreso debe hacerse completo desde Ualá."];
+    $r = ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá.",
+          "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app.",
+          "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá.",
+          "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda.",
+          "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá."];
     return $r[array_rand($r)];
 }
 
@@ -142,45 +147,54 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $yaSaludoHoy = isset($visitas[$telefonoConPrefijo]) && $visitas[$telefonoConPrefijo] === $hoy;
     if (!$yaSaludoHoy) {
         $saludo = saludoHora();
-        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Le solicitamos que ingrese saldo hoy mismo desde la app de Ualá.";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = respuestaUrgente();
     }
 } elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
+    $encontrado = null;
+    $lines = [];
+
     if (file_exists("deudores.csv")) {
         $fp = fopen("deudores.csv", "r");
-        $lines = [];
-        $encontrado = null;
         while (($line = fgetcsv($fp)) !== false) {
-            if (count($line) >= 4 && trim($line[1]) == $dni) {
-                $line[2] = $telefonoConPrefijo;
-                $encontrado = ["nombre" => $line[0], "dni" => $line[1], "telefono" => $telefonoConPrefijo, "deuda" => $line[3]];
+            if (count($line) >= 4) {
+                if (trim($line[1]) == $dni) {
+                    $line[2] = $telefonoConPrefijo;
+                    $encontrado = ["nombre" => $line[0], "deuda" => $line[3]];
+                }
+                $lines[] = $line;
             }
-            $lines[] = $line;
         }
         fclose($fp);
-        if ($encontrado) $deudor = $encontrado;
+
+        $fp = fopen("deudores.csv", "w");
+        foreach ($lines as $line) {
+            fputcsv($fp, $line);
+        }
+        fclose($fp);
+
         $fp = fopen("modificaciones.csv", "a");
         fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
         fclose($fp);
-        if ($deudor) {
-            $nombre = ucfirst(strtolower($deudor["nombre"]));
-            $saludo = saludoHora();
-            $monto = $deudor["deuda"];
-            $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
-            registrarVisita($telefonoConPrefijo);
-        } else {
-            $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
-        }
     }
-} elseif (!$deudor) {
+
+    if ($encontrado) {
+        $nombre = ucfirst(strtolower($encontrado["nombre"]));
+        $saludo = saludoHora();
+        $monto = $encontrado["deuda"];
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Le solicitamos que ingrese saldo hoy mismo desde la app de Ualá.";
+        registrarVisita($telefonoConPrefijo);
+    } else {
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
+    }
+} else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
 }
 
-file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message
-", FILE_APPEND);
+file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
