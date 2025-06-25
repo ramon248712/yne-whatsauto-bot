@@ -1,3 +1,6 @@
+// Guardar entrada cruda para depuración
+file_put_contents("debug_post.txt", print_r($_POST, true));
+
 <?php
 // Configuración general
 ini_set('display_errors', 0);
