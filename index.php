@@ -11,9 +11,12 @@ $app = $_POST["app"] ?? "";
 $sender = $_POST["sender"] ?? "";
 $message = $_POST["message"] ?? "";
 
-// Limpiar número
+// Limpiar número y normalizar
 $sender = preg_replace('/\D/', '', $sender);
 if (strlen($sender) < 8) exit(json_encode(["reply" => ""]));
+
+$numero10 = substr($sender, -10); // Los 10 dígitos reales
+$senderCompleto = "+549$numero10"; // Formato internacional
 
 // Cargar historial diario
 $visitas = [];
@@ -27,19 +30,19 @@ if (file_exists("visitas.csv")) {
     fclose($fp);
 }
 
-// Buscar deudor (formato: nombre;dni;teléfono;deuda)
-function buscarDeudor($telefono) {
+// Buscar deudor
+function buscarDeudor($telefono10) {
     if (!file_exists("deudores.csv")) return null;
     $archivo = fopen("deudores.csv", "r");
-    while (($datos = fgetcsv($archivo, 0, ";")) !== false) {
+    while (($datos = fgetcsv($archivo)) !== false) {
         if (count($datos) >= 4) {
-            $tel = preg_replace('/\D/', '', $datos[2]);
-            if (substr($tel, -8) === substr($telefono, -8)) {
+            $numeroCsv = preg_replace('/\D/', '', $datos[2]); // Números en CSV
+            if ($numeroCsv === $telefono10) {
                 fclose($archivo);
                 return [
                     "nombre" => $datos[0],
                     "dni" => $datos[1],
-                    "telefono" => $tel,
+                    "telefono" => $datos[2],
                     "deuda" => $datos[3]
                 ];
             }
@@ -50,7 +53,7 @@ function buscarDeudor($telefono) {
 }
 
 // Registrar visita
-function registrarVisita($telefono) {
+function registrarVisita($telefonoCompleto) {
     $visitas = [];
     if (file_exists("visitas.csv")) {
         $fp = fopen("visitas.csv", "r");
@@ -61,7 +64,7 @@ function registrarVisita($telefono) {
         }
         fclose($fp);
     }
-    $visitas[$telefono] = date("Y-m-d");
+    $visitas[$telefonoCompleto] = date("Y-m-d");
     $fp = fopen("visitas.csv", "w");
     foreach ($visitas as $num => $fecha) {
         fputcsv($fp, [$num, $fecha]);
@@ -77,14 +80,14 @@ function horaSaludo() {
     return "Buenas noches";
 }
 
-// Variantes
+// Variantes de respuesta
 function respuestaGracias() {
     $opciones = [
-        "De nada, estamos para ayudarte.", "Un placer ayudarte.",
-        "Con gusto.", "Siempre a disposición.", "Gracias a vos por comunicarte.",
-        "Estamos para ayudarte.", "Un gusto poder colaborar.",
-        "Cualquier cosa, escribinos.", "Para eso estamos.", "Lo que necesites, consultanos.",
-        "No hay de qué.", "A disposición siempre.", "Quedamos atentos.", "Nos alegra ayudarte."
+        "De nada, estamos para ayudarte.", "Un placer ayudarte.", "Con gusto.",
+        "Siempre a disposición.", "Gracias a vos por comunicarte.", "Estamos para ayudarte.",
+        "Un gusto poder colaborar.", "Cualquier cosa, escribinos.", "Para eso estamos.",
+        "Lo que necesites, consultanos.", "No hay de qué.", "A disposición siempre.",
+        "Quedamos atentos.", "Nos alegra ayudarte."
     ];
     return $opciones[array_rand($opciones)];
 }
@@ -120,10 +123,10 @@ function respuestaUrgencia() {
     return $opciones[array_rand($opciones)];
 }
 
-// Procesar mensaje
+// --- Procesar mensaje ---
 $msg = strtolower($message);
 $hoy = date("Y-m-d");
-$deudor = buscarDeudor($sender);
+$deudor = buscarDeudor($numero10);
 
 if (strpos($msg, 'gracia') !== false) {
     $respuesta = respuestaGracias();
@@ -134,31 +137,31 @@ if (strpos($msg, 'gracia') !== false) {
 } elseif ($deudor) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
-    $yaSaludoHoy = isset($visitas[$sender]) && $visitas[$sender] === $hoy;
+    $yaSaludoHoy = isset($visitas[$senderCompleto]) && $visitas[$senderCompleto] === $hoy;
     if (!$yaSaludoHoy) {
         $saludo = horaSaludo();
         $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
-        registrarVisita($sender);
+        registrarVisita($senderCompleto);
     } else {
         $respuesta = respuestaUrgencia();
     }
 } elseif (preg_match('/\d{7,9}/', $msg, $coincidencia)) {
     $dniIngresado = $coincidencia[0];
     if (file_exists("deudores.csv")) {
-        $fp = fopen("deudores.csv", "r");
+        $fp = fopen("deudores.csv", "r+");
         $lineas = [];
         $deudor = null;
-        while (($linea = fgetcsv($fp, 0, ";")) !== false) {
+        while (($linea = fgetcsv($fp)) !== false) {
             if (count($linea) >= 4 && trim($linea[1]) === $dniIngresado) {
-                $linea[2] = $sender;
-                $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $sender, "deuda" => $linea[3]];
+                $linea[2] = $numero10; // Guardamos solo los 10 dígitos en el CSV
+                $deudor = ["nombre" => $linea[0], "dni" => $linea[1], "telefono" => $numero10, "deuda" => $linea[3]];
             }
             $lineas[] = $linea;
         }
         fclose($fp);
         $fp = fopen("deudores.csv", "w");
         foreach ($lineas as $l) {
-            fputcsv($fp, $l, ";");
+            fputcsv($fp, $l);
         }
         fclose($fp);
 
@@ -167,7 +170,7 @@ if (strpos($msg, 'gracia') !== false) {
             $monto = $deudor["deuda"];
             $saludo = horaSaludo();
             $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
-            registrarVisita($sender);
+            registrarVisita($senderCompleto);
         } else {
             $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podés verificar si está bien escrito?";
         }
@@ -179,8 +182,9 @@ if (strpos($msg, 'gracia') !== false) {
 }
 
 // Guardar historial
-file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
+file_put_contents("historial.txt", date("Y-m-d H:i") . " | $senderCompleto => $message\n", FILE_APPEND);
 
 // Respuesta final
 echo json_encode(["reply" => $respuesta]);
 exit;
+?>
