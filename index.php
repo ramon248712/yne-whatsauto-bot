@@ -18,6 +18,19 @@ if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
     exit;
 }
 
+// Detección de audio
+if ($message === "" || in_array($message, ["audio", "[audio]", "mensaje de voz"])) {
+    $respuestasAudio = [
+        "Escribinos por texto así podemos ayudarte mejor.",
+        "Para poder asistirte, necesitamos que nos escribas. No procesamos audios.",
+        "Te pedimos que lo escribas por acá, no podemos escuchar audios.",
+        "Para darte una respuesta clara, necesitamos que escribas tu mensaje.",
+        "Mandanos tu consulta por escrito así lo vemos al instante."
+    ];
+    echo json_encode(["reply" => $respuestasAudio[array_rand($respuestasAudio)]]);
+    exit;
+}
+
 // Normalización del número a formato CSV (solo los 10 dígitos finales)
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
@@ -53,7 +66,7 @@ function registrarVisita($telefono) {
 // Ejecutivos formales
 $ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucia", "Santiago", "Ana", "Matias"];
 
-// Buscar deudor
+// Buscar deudor desde archivo base
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
@@ -115,6 +128,15 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
+// Ver si el número fue marcado como equivocado y debe eliminarse
+if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
+    $fp = fopen("modificaciones.csv", "a");
+    fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
+    fclose($fp);
+    echo json_encode(["reply" => "Entendido. Eliminamos tu número de nuestra base de gestión."]);
+    exit;
+}
+
 // --- Lógica principal ---
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
@@ -145,7 +167,7 @@ if (contiene($message, ["gracia", "gracias", "graciah"])) {
 } elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
     if (file_exists("deudores.csv")) {
-        $fp = fopen("deudores.csv", "r+");
+        $fp = fopen("deudores.csv", "r");
         $lines = [];
         $encontrado = null;
         while (($line = fgetcsv($fp)) !== false) {
@@ -156,8 +178,8 @@ if (contiene($message, ["gracia", "gracias", "graciah"])) {
             $lines[] = $line;
         }
         fclose($fp);
-        $fp = fopen("deudores.csv", "w");
-        foreach ($lines as $l) fputcsv($fp, $l);
+        $fp = fopen("modificaciones.csv", "a");
+        fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
         fclose($fp);
         if ($encontrado) {
             $nombre = ucfirst(strtolower($encontrado["nombre"]));
