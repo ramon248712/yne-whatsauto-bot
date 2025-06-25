@@ -12,12 +12,6 @@ $sender = $_POST["sender"] ?? "";
 $message = strtolower(trim($_POST["message"] ?? ""));
 $sender = preg_replace('/\D/', '', $sender);
 
-// Validación básica del mensaje
-if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
-    echo json_encode(["reply" => ""]);
-    exit;
-}
-
 // Normalización del número a formato CSV (solo los 10 dígitos finales)
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
@@ -33,6 +27,12 @@ if (file_exists("modificaciones.csv")) {
             exit;
         }
     }
+}
+
+// Validación básica del mensaje
+if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
+    echo json_encode(["reply" => ""]);
+    exit;
 }
 
 // Detección de audio
@@ -65,7 +65,6 @@ if (file_exists("visitas.csv")) {
     }
 }
 
-// Registrar visita
 function registrarVisita($telefono) {
     global $visitas;
     $visitas[$telefono] = date("Y-m-d");
@@ -74,10 +73,8 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
-// Ejecutivos formales
 $ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucia", "Santiago", "Ana", "Matias"];
 
-// Buscar deudor desde archivo base
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
@@ -91,7 +88,6 @@ function buscarDeudor($tel) {
     return null;
 }
 
-// Detección de mensajes
 function contiene($msg, $palabras) {
     foreach ($palabras as $p) {
         if (strpos($msg, $p) !== false) return true;
@@ -99,7 +95,6 @@ function contiene($msg, $palabras) {
     return false;
 }
 
-// Respuestas
 function respuestaGracias() {
     $r = ["De nada, estamos para ayudarte.", "Un placer ayudarte.", "Con gusto.",
           "Siempre a disposición.", "Gracias a vos por comunicarte.", "Estamos para ayudarte.",
@@ -204,10 +199,8 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $respuesta = respuestaUrgente();
 }
 
-// Historial
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 
-// Enviar respuesta
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
