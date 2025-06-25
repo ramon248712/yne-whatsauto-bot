@@ -64,6 +64,8 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
+$ejecutivos = ["Julieta", "Francisco", "Camila", "Agustina", "Valentina", "Donato", "Milagros", "Lucia", "Santiago", "Ana", "Matias"];
+
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
@@ -154,7 +156,8 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $yaSaludoHoy = isset($visitas[$telefonoConPrefijo]) && $visitas[$telefonoConPrefijo] === $hoy;
     if (!$yaSaludoHoy) {
         $saludo = saludoHora();
-        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
+        $ejecutivo = $ejecutivos[array_rand($ejecutivos)];
+        $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.\n\n$ejecutivo – Ejecutivo de Cuentas, Cuervo Abogados";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = respuestaUrgente();
@@ -180,7 +183,8 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
             $nombre = ucfirst(strtolower($encontrado["nombre"]));
             $saludo = saludoHora();
             $monto = $encontrado["deuda"];
-            $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.";
+            $ejecutivo = $ejecutivos[array_rand($ejecutivos)];
+            $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.\n\n$ejecutivo – Ejecutivo de Cuentas, Cuervo Abogados";
             registrarVisita($telefonoConPrefijo);
         } else {
             $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
@@ -195,3 +199,4 @@ file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
+
