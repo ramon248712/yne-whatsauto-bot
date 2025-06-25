@@ -118,7 +118,7 @@ function respuestaUrgente() {
 // --- Lógica principal ---
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
-$respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
+$respuesta = "";
 
 if (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = respuestaGracias();
@@ -170,6 +170,8 @@ if (contiene($message, ["gracia", "gracias", "graciah"])) {
             $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
         }
     }
+} elseif (!$deudor) {
+    $respuesta = respuestaUrgente();
 }
 
 // Historial
