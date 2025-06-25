@@ -1,30 +1,13 @@
-// Guardar entrada cruda para depuración
+<?php
+// Configuración general
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
+date_default_timezone_set("America/Argentina/Buenos_Aires");
+header('Content-Type: application/json');
+
+// Registro de debug
 file_put_contents("debug_post.txt", print_r($_POST, true));
-
-<?php
-// Configuración general
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(0);
-date_default_timezone_set("America/Argentina/Buenos_Aires");
-header('Content-Type: application/json');
-
-// Registrar datos crudos del POST para debug
-file_put_contents("debug_post.txt", date("Y-m-d H:i:s") . " | " . print_r($_POST, true) . "\n", FILE_APPEND);
-
-// Datos del POST
-$app = $_POST["app"] ?? "";
-$sender = $_POST["sender"] ?? "";
-$message = strtolower(trim($_POST["message"] ?? ""));
-$sender = preg_replace('/\D/', '', $sender);
-
-<?php
-// Configuración general
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(0);
-date_default_timezone_set("America/Argentina/Buenos_Aires");
-header('Content-Type: application/json');
 
 // Datos del POST
 $app = $_POST["app"] ?? "";
@@ -58,17 +41,15 @@ $audioDetectado = in_array($message, ["audio", "[audio]", "mensaje de voz", "not
 $mensajeRuido = (strlen($message) <= 3 && !preg_match('/\d/', $message) && preg_match('/[^a-zA-Z0-9]/', $message));
 
 if ($audioDetectado || $mensajeRuido) {
-    echo json_encode(["reply" => "No puedo escucharlo en este momento, ¿podrás escribirlo?"]);
+    echo json_encode(["reply" => "No puedo escucharlo en este momento, podrías escribirlo."]);
     exit;
 }
 
-// Validación básica del mensaje
 if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) {
     echo json_encode(["reply" => ""]);
     exit;
 }
 
-// Saludo según la hora
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -76,7 +57,6 @@ function saludoHora() {
     return "Buenas noches";
 }
 
-// Cargar visitas
 $visitas = [];
 if (file_exists("visitas.csv")) {
     foreach (file("visitas.csv") as $linea) {
@@ -154,7 +134,6 @@ function respuestaUrgente() {
     return $r[array_rand($r)];
 }
 
-// --- Lógica principal ---
 $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
 $respuesta = "";
@@ -163,7 +142,6 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
-    // Eliminar también de visitas.csv
     unset($visitas[$telefonoConPrefijo]);
     $fp = fopen("visitas.csv", "w");
     foreach ($visitas as $t => $f) fputcsv($fp, [$t, $f]);
