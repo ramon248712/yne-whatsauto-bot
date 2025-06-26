@@ -15,7 +15,6 @@ if (strlen($sender) < 10) exit(json_encode(["reply" => ""]));
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
 
-// Utilidades
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -71,12 +70,13 @@ function buscarDeudor($telefono) {
 }
 
 function cargarFrases($archivo) {
-    return array_map("trim", file($archivo));
+    return file_exists($archivo) ? array_map("trim", file($archivo)) : [];
 }
 
-function getFraseUnica($telefono, $archivoFrases, $archivoUsos) {
-    $frases = cargarFrases($archivoFrases);
-    $usadas = file_exists($archivoUsos) ? json_decode(file_get_contents($archivoUsos), true) : [];
+function getFrasePersonalizada($telefono, $nombre, $monto) {
+    $archivo = "uso_frases.json";
+    $frases = cargarFrases("frases_iniciales.txt");
+    $usadas = file_exists($archivo) ? json_decode(file_get_contents($archivo), true) : [];
 
     if (!isset($usadas[$telefono])) $usadas[$telefono] = [];
     $pendientes = array_diff($frases, $usadas[$telefono]);
@@ -88,13 +88,8 @@ function getFraseUnica($telefono, $archivoFrases, $archivoUsos) {
 
     $frase = $pendientes[array_rand($pendientes)];
     $usadas[$telefono][] = $frase;
-    file_put_contents($archivoUsos, json_encode($usadas));
+    file_put_contents($archivo, json_encode($usadas));
 
-    return $frase;
-}
-
-function getFrasePersonalizada($telefono, $nombre, $monto) {
-    $frase = getFraseUnica($telefono, "frases_iniciales.txt", "uso_frases.json");
     return strtr($frase, [
         "{saludo}" => saludoHora(),
         "{nombre}" => ucfirst(strtolower($nombre)),
@@ -102,21 +97,12 @@ function getFrasePersonalizada($telefono, $nombre, $monto) {
     ]);
 }
 
-function getFraseUrgencia($telefono) {
-    return getFraseUnica($telefono, "frases_urgencia.txt", "uso_urgencia.json");
-}
-
 function respuestaPorCategoria($categoria) {
-    $respuestas = [
-        "gracias" => ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto", "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte", "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"],
-        "cuotas" => ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá", "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app", "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá", "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda", "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"],
-        "sintrabajo" => ["Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá", "Sabemos que la situación puede ser difícil, pero necesitamos que ingrese un monto hoy desde la app de Ualá", "Aunque esté sin trabajo, le pedimos que realice una carga mínima en su cuenta Ualá para evitar gestiones"],
-        "problemaapp" => ["Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá", "Para problemas con la app, le recomendamos contactar al soporte de Ualá directamente", "Le sugerimos reiniciar la app o comunicarse con soporte de Ualá si persiste el problema"]
-    ];
-    return $respuestas[$categoria][array_rand($respuestas[$categoria])];
+    $archivo = "frases_{$categoria}.txt";
+    $frases = cargarFrases($archivo);
+    return $frases ? $frases[array_rand($frases)] : "";
 }
 
-// Procesamiento principal
 $respuesta = "";
 
 if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
@@ -172,10 +158,10 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
             $respuesta = getFrasePersonalizada($telefonoConPrefijo, $deudor["nombre"], $deudor["deuda"]);
             registrarVisita($telefonoConPrefijo);
         } else {
-            $respuesta = getFraseUrgencia($telefonoConPrefijo);
+            $respuesta = respuestaPorCategoria("urgencia");
         }
     } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
-        $respuesta = getFraseUrgencia($telefonoConPrefijo);
+        $respuesta = respuestaPorCategoria("urgencia");
     } else {
         $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
