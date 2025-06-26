@@ -192,10 +192,16 @@ if (contiene($message, ["equivocado", "numero equivocado"])) {
     }
 
 } else {
-    // Si el mensaje es vacío o parece multimedia (sin texto útil), responder con urgencia
-    if (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
+    // Si el mensaje contiene un posible DNI pero no se encontró en el CSV, pedir confirmación
+    if (preg_match('/\b\d{7,9}\b/', $message)) {
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
+    } 
+    // Si el mensaje no contiene texto útil (como imagen, audio, sticker), responder con urgencia
+    elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
         $respuesta = urgenciaAleatoria();
-    } else {
+    } 
+    // En cualquier otro caso, pedir el DNI
+    else {
         $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
 }
