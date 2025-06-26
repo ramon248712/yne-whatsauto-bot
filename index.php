@@ -123,7 +123,7 @@ function respuestaSinTrabajo() {
 }
 
 function respuestaProblemaApp() {
-    return "Si tiene problemas para acceder a la app de Ualá, comuníquese con su soporte de Ualá";
+    return "Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá";
 }
 
 // Procesamiento
