@@ -8,18 +8,15 @@ header('Content-Type: application/json');
 
 // Datos del POST
 $app = $_POST["app"] ?? "";
-$sender = $_POST["sender"] ?? "";
+$sender = preg_replace('/\D/', '', $_POST["sender"] ?? "");
 $message = strtolower(trim($_POST["message"] ?? ""));
-$sender = preg_replace('/\D/', '', $sender);
 
-// Normalización del número
+// Validar número
+if (strlen($sender) < 10) exit(json_encode(["reply" => ""]));
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
-if (strlen($telefonoBase) != 10) exit(json_encode(["reply" => ""]));
 
-// Validación básica del mensaje
-if (strlen($message) < 3 || preg_match('/^[^a-zA-Z0-9]+$/', $message)) exit(json_encode(["reply" => ""]));
-
+// Funciones generales
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -44,7 +41,7 @@ function registrarVisita($telefono) {
     }
     $visitas[$telefono] = date("Y-m-d");
     $fp = fopen("visitas.csv", "w");
-    foreach ($visitas as $t => $f) fputcsv($fp, [$t, $f]);
+    foreach ($visitas as $tel => $fecha) fputcsv($fp, [$tel, $fecha]);
     fclose($fp);
 }
 
@@ -57,14 +54,14 @@ function yaSaludoHoy($telefono) {
     return false;
 }
 
-function buscarDeudor($tel) {
+function buscarDeudor($telefono) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
-    $telFinal = substr(preg_replace('/\D/', '', $tel), -10);
+    $telBase = substr(preg_replace('/\D/', '', $telefono), -10);
     while (($line = fgetcsv($fp)) !== false) {
         if (count($line) >= 4) {
-            $telCSV = substr(preg_replace('/\D/', '', $line[2]), -10);
-            if ($telCSV === $telFinal) {
+            $telCsv = substr(preg_replace('/\D/', '', $line[2]), -10);
+            if ($telCsv === $telBase) {
                 fclose($fp);
                 return ["nombre" => $line[0], "dni" => $line[1], "telefono" => $line[2], "deuda" => $line[3]];
             }
@@ -75,80 +72,134 @@ function buscarDeudor($tel) {
 }
 
 function urgenciaAleatoria() {
-    $urgencias = [
-        "LE RECORDAMOS QUE DEBE INGRESAR SALDO EN SU CUENTA DE UALA HOY MISMO",
-        "INGRESE FONDOS EN LA APP DE UALA PARA EVITAR NUEVAS GESTIONES",
-        "CUMPLIMOS EN INFORMARLE QUE DEBE REGULARIZAR SU DEUDA DESDE UALA",
-        "PARA EVITAR COMPLICACIONES TRANSFIERA A SU CVU EN UALA",
-        "LA SITUACIÓN SIGUE ACTIVA INGRESE SALDO EN SU CUENTA HOY",
-        "INGRESE CUALQUIER MONTO DISPONIBLE DESDE LA APP DE UALA",
-        "REGULARICE HOY MISMO MEDIANTE CARGA EN SU CUENTA UALA",
-        "SE SOLICITA PAGO INMEDIATO A TRAVÉS DE LA APP DE UALA",
-        "REALICE UNA TRANSFERENCIA DESDE SU APP PARA EVITAR GESTIONES",
-        "LA DEUDA SIGUE PENDIENTE INGRESE SALDO DESDE UALA",
-        "POR FAVOR CANCELE O INGRESE A CUENTA EN UALA",
-        "LE INFORMAMOS QUE LA GESTIÓN SIGUE ACTIVA SIN PAGO REGISTRADO",
-        "HAGA EL ESFUERZO HOY Y TRANSFIERA DESDE UALA",
-        "SU SALDO SIGUE PENDIENTE INGRESE A UALA Y TRANSFIERA",
-        "EVITE COMPLICACIONES ADICIONALES CARGANDO DINERO EN UALA",
-        "ES NECESARIO QUE REGULARICE INGRESANDO SALDO HOY",
-        "LA DEUDA SIGUE ABIERTA INGRESE CUALQUIER MONTO EN UALA",
-        "TRANSFERENCIA URGENTE REQUERIDA DESDE SU APP DE UALA",
-        "RECUERDE INGRESAR DINERO EN UALA PARA RESOLVER SU SITUACIÓN",
-        "REALICE UN PAGO A CUENTA PARA EVITAR NUEVAS GESTIONES"
+    $mensajes = [
+        "LE RECORDAMOS INGRESAR SALDO HOY MISMO EN UALA PARA EVITAR GESTIONES.",
+        "LE INFORMAMOS QUE SU DEUDA SIGUE ACTIVA, REGULARICE HOY EN UALA.",
+        "CUMPLA CON EL INGRESO DE SALDO EN LA APP PARA EVITAR CONSECUENCIAS.",
+        "SE REQUIERE INGRESO DE SALDO URGENTE EN UALA.",
+        "EVITE COMPLICACIONES: INGRESE DINERO EN UALA HOY.",
+        "CARGUE SALDO EN SU CUENTA DE UALA PARA SALDAR LA DEUDA.",
+        "REALICE LA TRANSFERENCIA EN SU APP DE UALA A LA BREVEDAD.",
+        "RECUERDE ABONAR INGRESANDO SALDO EN UALA.",
+        "EVITE PROBLEMAS FUTUROS CARGANDO FONDOS HOY MISMO.",
+        "REGULARICE LA DEUDA INGRESANDO SALDO EN UALA YA.",
+        "INGRESE CUALQUIER MONTO DISPONIBLE DESDE UALA HOY.",
+        "LE SOLICITAMOS EL PAGO INGRESANDO SALDO EN SU APP DE UALA.",
+        "CUMPLA HOY CON EL INGRESO DE FONDOS EN UALA.",
+        "NO DEMORE MÁS, INGRESE SALDO EN UALA CUANTO ANTES.",
+        "RESUELVA HOY CARGANDO DINERO EN UALA.",
+        "SEÑOR/A: INGRESE SALDO EN UALA PARA EVITAR NUEVAS GESTIONES.",
+        "EVITE INCONVENIENTES CUMPLIENDO CON EL INGRESO EN UALA.",
+        "REALICE EL DEPÓSITO HOY EN UALA PARA EVITAR SEGUIMIENTOS.",
+        "LA DEUDA SIGUE ACTIVA, INGRESE SALDO PARA RESOLVER.",
+        "HAGA EL INGRESO EN SU APP DE UALA PARA EVITAR ACCIONES.",
+        "CARGUE DINERO EN UALA PARA CERRAR EL CASO.",
+        "REGULARICE HOY INGRESANDO EN UALA, EVITE ESCALAMIENTOS.",
+        "NO POSTERGUE MÁS, INGRESE LO QUE PUEDA DESDE UALA.",
+        "MANTÉNGASE AL DÍA CARGANDO FONDOS HOY MISMO.",
+        "LE INFORMAMOS QUE AÚN NO INGRESÓ SALDO EN UALA.",
+        "APORTE HOY DESDE UALA PARA EVITAR SEGUIMIENTO LEGAL.",
+        "ESTAMOS ESPERANDO SU PAGO EN UALA.",
+        "SE LE SOLICITA CUMPLIMIENTO HOY MISMO EN UALA.",
+        "LE PEDIMOS REGULARICE SU SITUACIÓN CON UN INGRESO.",
+        "RECUERDE REALIZAR LA CARGA EN UALA PARA EVITAR MÁS CONTACTOS.",
+        "PARA EVITAR GESTIONES ADICIONALES, ABONE HOY EN UALA.",
+        "TRANSFIERA HOY EN SU CUENTA DE UALA PARA FINALIZAR.",
+        "SEGUIMOS A LA ESPERA DE SU INGRESO DESDE UALA.",
+        "NO SE REGISTRA EL INGRESO, REALÍCELO HOY DESDE UALA.",
+        "LE INFORMAMOS QUE CONTINÚA LA DEUDA: REGULARICE EN UALA.",
+        "LE RECOMENDAMOS INGRESAR SALDO HOY DESDE SU APP.",
+        "EVITE CONTACTOS FUTUROS INGRESANDO SALDO EN UALA.",
+        "NO OLVIDE CUMPLIR CON LA OBLIGACIÓN HOY MISMO.",
+        "SU SITUACIÓN SIGUE ACTIVA, INGRESE SALDO DESDE LA APP.",
+        "NECESITAMOS VER UN MOVIMIENTO HOY DESDE UALA.",
+        "REGULARICE A LA BREVEDAD INGRESANDO SALDO EN UALA.",
+        "POR FAVOR, INGRESE SALDO HOY MISMO EN UALA.",
+        "SEGUIMOS ESPERANDO EL INGRESO DESDE SU APP.",
+        "CUMPLO EN RECORDARLE EL INGRESO PENDIENTE EN UALA.",
+        "LE SOLICITAMOS LO QUE PUEDA INGRESAR HOY MISMO.",
+        "REGULARICE SU SITUACIÓN DESDE LA APP DE UALA.",
+        "SU ESTADO SIGUE ACTIVO: INGRESE SALDO HOY.",
+        "ABONE HOY LO QUE PUEDA DESDE SU APP DE UALA.",
+        "LO QUE PUEDA INGRESAR SERÁ TENIDO EN CUENTA.",
+        "LE RECOMENDAMOS NO DEMORAR MÁS EL INGRESO.",
     ];
-    return $urgencias[array_rand($urgencias)];
+    return $mensajes[array_rand($mensajes)];
 }
 
-$deudor = buscarDeudor($telefonoConPrefijo);
+// --- Procesamiento del mensaje ---
 $respuesta = "";
+$deudor = buscarDeudor($telefonoConPrefijo);
 
-if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
+// Excepciones
+if (contiene($message, ["equivocado", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
-    echo json_encode(["reply" => "Entendido. Eliminamos tu número de nuestra base de gestión."]);
-    exit;
+    $respuesta = "Entendido. Eliminamos tu número de nuestra base de gestión.";
+}
+elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
+    $respuesta = "De nada, estamos para ayudarte.";
+}
+elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "plan", "acuerdo"])) {
+    $respuesta = "No trabajamos con cuotas, debe ingresar saldo en su app de Ualá.";
+}
+elseif (contiene($message, ["ya pague", "pague", "saldad", "no debo", "no devo"])) {
+    $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá.";
 }
 elseif ($deudor) {
+    $nombre = ucfirst(strtolower($deudor["nombre"]));
+    $monto = $deudor["deuda"];
     if (!yaSaludoHoy($telefonoConPrefijo)) {
         $saludo = saludoHora();
-        $respuesta = "$saludo {$deudor['nombre']}. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$deudor['deuda']}. Ingrese saldo desde su app de Ualá para resolverlo.";
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Ingrese saldo desde su app de Ualá para resolverlo.";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = urgenciaAleatoria();
     }
-} elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
+}
+elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
     $fp = fopen("deudores.csv", "r");
-    $lines = [];
+    $lineas = [];
     $encontrado = null;
+
     while (($line = fgetcsv($fp)) !== false) {
-        if (count($line) >= 4 && trim($line[1]) == $dni) {
-            $line[2] = $telefonoConPrefijo;
-            $encontrado = ["nombre" => $line[0], "deuda" => $line[3], "dni" => $line[1]];
+        if (count($line) >= 4) {
+            if (trim($line[1]) == $dni) {
+                $line[2] = $telefonoConPrefijo;
+                $encontrado = ["nombre" => $line[0], "dni" => $line[1], "deuda" => $line[3]];
+            }
+            $lineas[] = $line;
         }
-        $lines[] = $line;
     }
     fclose($fp);
+
     if ($encontrado) {
         $fp = fopen("deudores.csv", "w");
-        foreach ($lines as $l) fputcsv($fp, $l);
+        foreach ($lineas as $l) fputcsv($fp, $l);
         fclose($fp);
+
         $fp = fopen("modificaciones.csv", "a");
         fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
         fclose($fp);
+
         $saludo = saludoHora();
-        $respuesta = "$saludo {$encontrado['nombre']}. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado['deuda']}. Ingrese saldo desde su app de Ualá para resolverlo.";
+        $nombre = ucfirst(strtolower($encontrado["nombre"]));
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]}. Ingrese saldo desde su app de Ualá para resolverlo.";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
-} else {
+}
+else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
 }
 
+// Guardar historial
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
+
+// Respuesta final
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
