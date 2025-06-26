@@ -71,59 +71,80 @@ function buscarDeudor($telefono) {
     return null;
 }
 
-function urgenciaAleatoria() {
-    $r = [
-        "Le pedimos ingresar saldo hoy mismo desde su app de Ualá",
-        "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes",
-        "La deuda sigue vigente, regularícela desde su cuenta Ualá",
-        "Por favor, transfiera hoy mismo desde Ualá para evitar acciones",
-        "Le recordamos que puede resolver ingresando dinero en Ualá",
-        "Cumpla hoy con el ingreso pendiente en la app de Ualá",
-        "Para evitar consecuencias, haga una carga en su app Ualá",
-        "Resuelva esto hoy ingresando lo que pueda en su cuenta",
-        "El expediente sigue activo, le sugerimos transferir hoy mismo",
-        "Se requiere un ingreso inmediato desde su app de Ualá",
-        "No demore más, transfiera desde Ualá cuanto antes",
-        "Cierre esta gestión hoy mismo desde su cuenta Ualá",
-        "Con un ingreso hoy en Ualá, evita nuevas derivaciones",
-        "Sugerimos resolver esto ahora desde la app de Ualá",
-        "Debe ingresar saldo hoy para evitar pasos legales",
-        "El estudio le solicita una transferencia desde la app de Ualá",
-        "Hoy puede ser el último aviso, regularice en la app",
-        "Con una carga hoy desde Ualá, evita complicaciones",
-        "Aún está a tiempo de resolver, transfiera desde Ualá",
-        "No espere más, ingrese lo que pueda hoy mismo",
-        "El saldo sigue estando pendiente, transfiera en la app",
-        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app",
-        "Transfiera el saldo a su cuenta de Ualá para resolverlo",
-        "Resolver esto depende de usted. Ingrese el saldo en la app",
-        "Es urgente ingresar saldo hoy en Ualá"
+function elegirFrase($telefono, $clave, $frases) {
+    $archivo = "frases_usadas.csv";
+    $usos = [];
+
+    if (file_exists($archivo)) {
+        foreach (file($archivo, FILE_IGNORE_NEW_LINES) as $linea) {
+            list($tel, $tipo, $lista) = array_pad(explode("|", $linea), 3, '');
+            $usos[$tel][$tipo] = $lista === '' ? [] : explode(",", $lista);
+        }
+    }
+
+    $usadas = $usos[$telefono][$clave] ?? [];
+    $todos = range(0, count($frases) - 1);
+    $disponibles = array_diff($todos, $usadas);
+    if (empty($disponibles)) {
+        $usadas = [];
+        $disponibles = $todos;
+    }
+
+    $indice = array_values($disponibles)[array_rand($disponibles)];
+    $usadas[] = $indice;
+    $usos[$telefono][$clave] = $usadas;
+
+    $fp = fopen($archivo, "w");
+    foreach ($usos as $tel => $tipos) {
+        foreach ($tipos as $tipo => $lista) {
+            fwrite($fp, "$tel|$tipo|" . implode(",", $lista) . "\n");
+        }
+    }
+    fclose($fp);
+
+    return $frases[$indice];
+}
+
+function urgenciaAleatoria($telefono) {
+    $frases = include "frases_urgencia.php";
+    return elegirFrase($telefono, "urgencia", $frases);
+}
+
+function respuestaGracias($telefono) {
+    $r = ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto", "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte", "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"];
+    return elegirFrase($telefono, "gracias", $r);
+}
+
+function respuestaNoCuotas($telefono) {
+    $r = ["No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá", "No manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app", "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá", "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda", "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"];
+    return elegirFrase($telefono, "cuotas", $r);
+}
+
+function respuestaSinTrabajo($telefono) {
+    $r = ["Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá", "Sabemos que la situación puede ser difícil, pero necesitamos que ingrese un monto hoy desde la app de Ualá", "Aunque esté sin trabajo, le pedimos que realice una carga mínima en su cuenta Ualá para evitar gestiones"];
+    return elegirFrase($telefono, "sintrabajo", $r);
+}
+
+function respuestaProblemaApp($telefono) {
+    $r = ["Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá", "Para problemas con la app, le recomendamos contactar al soporte de Ualá directamente", "Le sugerimos reiniciar la app o comunicarse con soporte de Ualá si persiste el problema"];
+    return elegirFrase($telefono, "app", $r);
+}
+
+function respuestaInicialPersonalizada($telefono, $nombre, $monto) {
+    $frases = [
+        "$nombre, ¿cómo estás? Respecto a la deuda devengada de \$$monto con Ualá, estás a tiempo de abonarla desde la app. – Rodrigo",
+        "Te escribo por el saldo pendiente de \$$monto registrado en tu cuenta Ualá. Podés cancelarlo directamente desde la app. – Rodrigo",
+        "Le informamos que mantiene un saldo impago de \$$monto en Ualá. Le recomendamos regularizarlo desde la aplicación cuanto antes. – Rodrigo",
+        "Se detecta una deuda activa de \$$monto con Ualá. Recordá que podés saldarla cargando saldo en la app. – Rodrigo",
+        "Aún figura un saldo sin cancelar de \$$monto en tu cuenta. Ingresá fondos desde la app para resolverlo. – Rodrigo",
+        "Continúa pendiente el pago de \$$monto con Ualá. Puede regularizarlo ingresando saldo desde la app. – Rodrigo",
+        "Sigue registrada una deuda de \$$monto. Por favor, ingresá ese monto en tu cuenta Ualá para evitar gestiones posteriores. – Rodrigo",
+        "Te recordamos que hay un importe de \$$monto sin abonar. Es necesario cargar ese monto en tu app de Ualá. – Rodrigo",
+        "Tu deuda de \$$monto permanece activa. Le recomendamos ingresar fondos hoy mismo desde la app de Ualá. – Rodrigo",
+        "Aún no hemos registrado el ingreso de \$$monto. Podés solucionarlo cargando saldo en tu cuenta Ualá. – Rodrigo"
     ];
-    return $r[array_rand($r)];
-}
-
-function respuestaGracias() {
-    $r = ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto",
-          "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte",
-          "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"];
-    return $r[array_rand($r)];
-}
-
-function respuestaNoCuotas() {
-    $r = ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá",
-          "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app",
-          "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá",
-          "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda",
-          "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"];
-    return $r[array_rand($r)];
-}
-
-function respuestaSinTrabajo() {
-    return "Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá";
-}
-
-function respuestaProblemaApp() {
-    return "Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá";
+    $saludo = saludoHora();
+    return "$saludo " . elegirFrase($telefono, "inicial", $frases);
 }
 
 // Procesamiento
