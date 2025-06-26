@@ -38,18 +38,30 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
+function normalizarTelefono($telefonoCrudo) {
+    $numero = preg_replace('/\D/', '', $telefonoCrudo);
+    if (strlen($numero) === 10) {
+        return "+549" . $numero;
+    } elseif (strlen($numero) === 11 && str_starts_with($numero, "549")) {
+        return "+" . $numero;
+    } elseif (str_starts_with($telefonoCrudo, "+")) {
+        return $telefonoCrudo;
+    }
+    return "+549" . substr($numero, -10); // por las dudas
+}
+
 function buscarDeudorPorTelefono($telefono) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
     while (($line = fgetcsv($fp, 0, ";")) !== false) {
         if (count($line) >= 4) {
-            $telefonoEnPlanilla = preg_replace('/\D/', '', $line[2]);
-            if (substr($telefonoEnPlanilla, -10) === substr($telefono, -10)) {
+            $telCSV = normalizarTelefono($line[2]);
+            if (substr($telCSV, -10) === substr($telefono, -10)) {
                 fclose($fp);
                 return [
                     "nombre" => $line[0],
                     "dni" => $line[1],
-                    "telefono" => $line[2],
+                    "telefono" => $telCSV,
                     "deuda" => $line[3]
                 ];
             }
@@ -69,7 +81,7 @@ function buscarDeudorPorDNI($dni, $telefonoNuevo) {
         if (count($line) >= 4) {
             $dniPlanilla = preg_replace('/\D/', '', $line[1]);
             if ($dniPlanilla === $dni) {
-                $line[2] = $telefonoNuevo;
+                $line[2] = normalizarTelefono($telefonoNuevo);
                 $encontrado = [
                     "nombre" => $line[0],
                     "dni" => $line[1],
