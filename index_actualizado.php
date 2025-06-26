@@ -1,7 +1,5 @@
 <?php 
-// Configuración general
 ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
 error_reporting(0);
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 header('Content-Type: application/json');
@@ -92,17 +90,6 @@ function registrarVisita($telefono) {
     fclose($fp);
 }
 
-$numerosEliminados = [];
-if (file_exists("modificaciones.csv")) {
-    foreach (file("modificaciones.csv") as $linea) {
-        $cols = str_getcsv($linea);
-        if (count($cols) >= 2 && $cols[0] === "eliminar") {
-            $numerosEliminados[] = $cols[1];
-        }
-    }
-    if (in_array($telefonoConPrefijo, $numerosEliminados)) exit(json_encode(["reply" => ""]));
-}
-
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
@@ -123,10 +110,8 @@ $deudor = buscarDeudor($telefonoConPrefijo);
 $hoy = date("Y-m-d");
 $respuesta = "";
 
+// CASOS ESPECIALES
 if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"])) {
-    $fp = fopen("modificaciones.csv", "a");
-    fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
-    fclose($fp);
     unset($visitas[$telefonoConPrefijo]);
     registrarVisita($telefonoConPrefijo);
     echo json_encode(["reply" => "Entendido. Eliminamos tu número de nuestra base de gestión."]);
@@ -147,53 +132,48 @@ if (contiene($message, ["equivocado", "número equivocado", "numero equivocado"]
     $yaSaludoHoy = isset($visitas[$telefonoConPrefijo]) && $visitas[$telefonoConPrefijo] === $hoy;
     if (!$yaSaludoHoy) {
         $saludo = saludoHora();
-        $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.
-
-Soy Rodrigo, abogado del Estudio Cuervo Abogados.";
+        $respuesta = "$saludo $nombre, soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá. Estamos a disposición por cualquier duda.";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = respuestaUrgente();
     }
-} elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
-    $dni = $coinc[0];
+} elseif (preg_match('/\b(\d{1,2}\.?\d{3}\.?\d{3})\b|\b\d{7,9}\b/', $message, $coinc)) {
+    $dni = preg_replace('/\D/', '', $coinc[0]);
+    $deudaEncontrada = null;
+    $lineas = [];
+
     if (file_exists("deudores.csv")) {
         $fp = fopen("deudores.csv", "r");
-        $lines = [];
-        $encontrado = null;
         while (($line = fgetcsv($fp, 0, ";")) !== false) {
-            if (count($line) >= 4 && trim($line[1]) == $dni) {
-                $line[2] = $telefonoConPrefijo;
-                $encontrado = ["nombre" => $line[0], "deuda" => $line[3]];
+            if (count($line) >= 4) {
+                if (trim($line[1]) == $dni) {
+                    $line[2] = $telefonoConPrefijo;
+                    $deudaEncontrada = ["nombre" => $line[0], "deuda" => $line[3]];
+                }
+                $lineas[] = $line;
             }
-            $lines[] = $line;
         }
         fclose($fp);
-        if ($encontrado) {
-            $fp = fopen("deudores.csv", "w");
-            foreach ($lines as $l) fputcsv($fp, $l, ";");
-            fclose($fp);
+    }
 
-            $fp = fopen("modificaciones.csv", "a");
-            fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
-            fclose($fp);
+    if ($deudaEncontrada) {
+        $fp = fopen("deudores.csv", "w");
+        foreach ($lineas as $l) fputcsv($fp, $l, ";");
+        fclose($fp);
 
-            $nombre = ucfirst(strtolower($encontrado["nombre"]));
-            $saludo = saludoHora();
-            $monto = $encontrado["deuda"];
-            $respuesta = "$saludo $nombre. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá.
-
-Soy Rodrigo, abogado del Estudio Cuervo Abogados.";
-            registrarVisita($telefonoConPrefijo);
-        } else {
-            $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
-        }
+        $nombre = ucfirst(strtolower($deudaEncontrada["nombre"]));
+        $saludo = saludoHora();
+        $monto = $deudaEncontrada["deuda"];
+        $respuesta = "$saludo $nombre, soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Por favor, regularice ingresando saldo en la app de Ualá. Estamos a disposición por cualquier duda.";
+        registrarVisita($telefonoConPrefijo);
+    } else {
+        $respuesta = "No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
 } else {
-    $respuesta = respuestaUrgente();
+    $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
 }
 
-file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message
-", FILE_APPEND);
+file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
 exit;
 ?>
