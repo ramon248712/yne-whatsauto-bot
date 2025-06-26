@@ -70,14 +70,13 @@ function buscarDeudor($telefono) {
     return null;
 }
 
-function cargarFrasesIniciales() {
-    return array_map("trim", file("frases_iniciales.txt"));
+function cargarFrases($archivo) {
+    return array_map("trim", file($archivo));
 }
 
-function getFrasePersonalizada($telefono, $nombre, $monto) {
-    $archivo = "uso_frases.json";
-    $frases = cargarFrasesIniciales();
-    $usadas = file_exists($archivo) ? json_decode(file_get_contents($archivo), true) : [];
+function getFraseUnica($telefono, $archivoFrases, $archivoUsos) {
+    $frases = cargarFrases($archivoFrases);
+    $usadas = file_exists($archivoUsos) ? json_decode(file_get_contents($archivoUsos), true) : [];
 
     if (!isset($usadas[$telefono])) $usadas[$telefono] = [];
     $pendientes = array_diff($frases, $usadas[$telefono]);
@@ -89,10 +88,13 @@ function getFrasePersonalizada($telefono, $nombre, $monto) {
 
     $frase = $pendientes[array_rand($pendientes)];
     $usadas[$telefono][] = $frase;
-    file_put_contents($archivo, json_encode($usadas));
+    file_put_contents($archivoUsos, json_encode($usadas));
 
-    $saludo = saludoHora();
-    $frase = str_replace(["$saludo", "$nombre", "$monto"], ["{saludo}", "{nombre}", "{monto}"], $frase);
+    return $frase;
+}
+
+function getFrasePersonalizada($telefono, $nombre, $monto) {
+    $frase = getFraseUnica($telefono, "frases_iniciales.txt", "uso_frases.json");
     return strtr($frase, [
         "{saludo}" => saludoHora(),
         "{nombre}" => ucfirst(strtolower($nombre)),
@@ -100,13 +102,16 @@ function getFrasePersonalizada($telefono, $nombre, $monto) {
     ]);
 }
 
+function getFraseUrgencia($telefono) {
+    return getFraseUnica($telefono, "frases_urgencia.txt", "uso_urgencia.json");
+}
+
 function respuestaPorCategoria($categoria) {
     $respuestas = [
         "gracias" => ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto", "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte", "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"],
         "cuotas" => ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá", "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app", "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá", "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda", "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"],
         "sintrabajo" => ["Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá", "Sabemos que la situación puede ser difícil, pero necesitamos que ingrese un monto hoy desde la app de Ualá", "Aunque esté sin trabajo, le pedimos que realice una carga mínima en su cuenta Ualá para evitar gestiones"],
-        "problemaapp" => ["Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá", "Para problemas con la app, le recomendamos contactar al soporte de Ualá directamente", "Le sugerimos reiniciar la app o comunicarse con soporte de Ualá si persiste el problema"],
-        "urgencia" => ["Le pedimos ingresar saldo hoy mismo desde su app de Ualá", "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes", "La deuda sigue vigente, regularícela desde su cuenta Ualá", "Por favor, transfiera hoy mismo desde Ualá para evitar acciones", "Le recordamos que puede resolver ingresando dinero en Ualá", "Cumpla hoy con el ingreso pendiente en la app de Ualá", "Para evitar consecuencias, haga una carga en su app Ualá", "Resuelva esto hoy ingresando lo que pueda en su cuenta", "El expediente sigue activo, le sugerimos transferir hoy mismo", "Se requiere un ingreso inmediato desde su app de Ualá", "No demore más, transfiera desde Ualá cuanto antes", "Cierre esta gestión hoy mismo desde su cuenta Ualá", "Con un ingreso hoy en Ualá, evita nuevas derivaciones", "Sugerimos resolver esto ahora desde la app de Ualá", "Debe ingresar saldo hoy para evitar pasos legales", "El estudio le solicita una transferencia desde la app de Ualá", "Hoy puede ser el último aviso, regularice en la app", "Con una carga hoy desde Ualá, evita complicaciones", "Aún está a tiempo de resolver, transfiera desde Ualá", "No espere más, ingrese lo que pueda hoy mismo", "El saldo sigue estando pendiente, transfiera en la app", "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app", "Transfiera el saldo a su cuenta de Ualá para resolverlo", "Resolver esto depende de usted. Ingrese el saldo en la app", "Es urgente ingresar saldo hoy en Ualá"]
+        "problemaapp" => ["Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá", "Para problemas con la app, le recomendamos contactar al soporte de Ualá directamente", "Le sugerimos reiniciar la app o comunicarse con soporte de Ualá si persiste el problema"]
     ];
     return $respuestas[$categoria][array_rand($respuestas[$categoria])];
 }
@@ -167,10 +172,10 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
             $respuesta = getFrasePersonalizada($telefonoConPrefijo, $deudor["nombre"], $deudor["deuda"]);
             registrarVisita($telefonoConPrefijo);
         } else {
-            $respuesta = respuestaPorCategoria("urgencia");
+            $respuesta = getFraseUrgencia($telefonoConPrefijo);
         }
     } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
-        $respuesta = respuestaPorCategoria("urgencia");
+        $respuesta = getFraseUrgencia($telefonoConPrefijo);
     } else {
         $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
