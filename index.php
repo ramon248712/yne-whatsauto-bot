@@ -73,54 +73,54 @@ function buscarDeudor($telefono) {
 
 function urgenciaAleatoria() {
     $r = [
-        ["LE PEDIMOS INGRESAR SALDO HOY MISMO", "DESDE SU APP DE UALA"],
-        ["EVITE NUEVAS GESTIONES", "INGRESE UN MONTO EN UALA CUANTO ANTES"],
-        ["LA DEUDA SIGUE VIGENTE", "REGULARICELA DESDE SU CUENTA UALA"],
-        ["POR FAVOR TRANSFIERA HOY MISMO", "DESDE UALA PARA EVITAR ACCIONES"],
-        ["LE RECORDAMOS QUE PUEDE RESOLVER", "INGRESANDO DINERO EN UALA"],
-        ["CUMPLA HOY CON EL INGRESO PENDIENTE", "EN LA APP DE UALA"],
-        ["PARA EVITAR CONSECUENCIAS", "HAGA UNA CARGA EN SU APP UALA"],
-        ["RESUELVA ESTO HOY", "INGRESANDO LO QUE PUEDA EN SU CUENTA"],
-        ["EL EXPEDIENTE SIGUE ACTIVO", "LE SUGERIMOS TRANSFERIR HOY MISMO"],
-        ["SE REQUIERE UN INGRESO INMEDIATO", "DESDE SU APP DE UALA"],
-        ["NO DEMORE MAS", "TRANSFIERA DESDE UALA CUANTO ANTES"]
+        ["Le pedimos ingresar saldo hoy mismo", "Desde su app de Ualá"],
+        ["Evite nuevas gestiones", "Ingrese un monto en Ualá cuanto antes"],
+        ["La deuda sigue vigente", "Regularícela desde su cuenta Ualá"],
+        ["Por favor transfiera hoy mismo", "Desde Ualá para evitar acciones"],
+        ["Le recordamos que puede resolver", "Ingresando dinero en Ualá"],
+        ["Cumpla hoy con el ingreso pendiente", "En la app de Ualá"],
+        ["Para evitar consecuencias", "Haga una carga en su app Ualá"],
+        ["Resuelva esto hoy", "Ingresando lo que pueda en su cuenta"],
+        ["El expediente sigue activo", "Le sugerimos transferir hoy mismo"],
+        ["Se requiere un ingreso inmediato", "Desde su app de Ualá"],
+        ["No demore más", "Transfiera desde Ualá cuanto antes"]
     ];
     return $r[array_rand($r)];
 }
 
 function respuestaGracias() {
     $r = [
-        ["DE NADA", "ESTAMOS PARA AYUDARTE"],
-        ["UN PLACER AYUDARTE", "CUALQUIER COSA ESCRIBINOS"],
-        ["CON GUSTO", "LO QUE NECESITES CONSULTANOS"],
-        ["SIEMPRE A DISPOSICION", "GRACIAS POR TU MENSAJE"],
-        ["UN GUSTO PODER COLABORAR", "ESTAMOS A DISPOSICIÓN"]
+        ["De nada", "Estamos para ayudarte"],
+        ["Un placer ayudarte", "Cualquier cosa, escribinos"],
+        ["Con gusto", "Lo que necesites, consultanos"],
+        ["Siempre a disposición", "Gracias por tu mensaje"],
+        ["Un gusto poder colaborar", "Estamos a disposición"]
     ];
     return $r[array_rand($r)];
 }
 
 function respuestaNoCuotas() {
     $r = [
-        ["NO TRABAJAMOS CON PLANES", "PUEDE INGRESAR LO QUE PUEDA HOY DESDE UALA"],
-        ["NO MANEJAMOS ACUERDOS NI CUOTAS", "EL INGRESO DEBE HACERSE EN LA APP"],
-        ["NO OFRECEMOS CUOTAS", "LE SUGERIMOS HACER EL ESFUERZO HOY MISMO DESDE UALA"]
+        ["No trabajamos con planes", "Puede ingresar lo que pueda hoy desde Ualá"],
+        ["No manejamos acuerdos ni cuotas", "El ingreso debe hacerse en la app"],
+        ["No ofrecemos cuotas", "Le sugerimos hacer el esfuerzo hoy mismo desde Ualá"]
     ];
     return $r[array_rand($r)];
 }
 
 function respuestaSinTrabajo() {
-    return ["ENTENDEMOS QUE ESTE SIN TRABAJO", "HAGA EL ESFUERZO DE INGRESAR LO QUE PUEDA HOY DESDE UALA"];
+    return ["Entendemos que esté sin trabajo", "Haga el esfuerzo de ingresar lo que pueda hoy desde Ualá"];
 }
 
 function respuestaProblemaApp() {
-    return ["SI TIENE PROBLEMAS PARA ACCEDER A LA APP DE UALA", "COMUNIQUESE CON SOPORTE DE UALA"];
+    return ["Si tiene problemas para acceder a la app de Ualá", "Comuníquese con soporte de Ualá"];
 }
 
 function respuestaSaludoInicial($nombre, $monto) {
     $saludo = saludoHora();
     return [
-        "$saludo $nombre. SOY RODRIGO ABOGADO DEL ESTUDIO CUERVO ABOGADOS",
-        "LE INFORMAMOS QUE MANTIENE UN SALDO PENDIENTE DE \$$monto"
+        "$saludo $nombre, soy Rodrigo, abogado del Estudio Cuervo Abogados",
+        "Le informamos que mantiene un saldo pendiente de \$$monto"
     ];
 }
 
