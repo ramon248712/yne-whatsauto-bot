@@ -119,11 +119,14 @@ function respuestaProblemaApp() {
 function respuestaSaludoInicial($nombre, $monto) {
     $saludo = saludoHora();
     return [
-        "$saludo $nombre, soy Rodrigo, abogado del Estudio Cuervo Abogados",
-        "Le informamos que mantiene un saldo pendiente de \$$monto"
+        "$saludo $nombre",
+        "Soy Rodrigo, abogado del Estudio Cuervo Abogados",
+        "Le informamos que mantiene un saldo pendiente de \$$monto",
+        "Ingrese saldo desde su app de Ualá para resolverlo"
     ];
 }
 
+// Procesamiento
 $respuesta = [];
 $deudor = buscarDeudor($telefonoConPrefijo);
 
