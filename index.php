@@ -94,11 +94,11 @@ function urgenciaAleatoria() {
         "Aún está a tiempo de resolver, transfiera desde Ualá",
         "No espere más, ingrese lo que pueda hoy mismo",
         "El saldo sigue estando pendiente, transfiera en la app",
-        "Le pedimos prioridad con esta gestión Ingrese hoy el saldo en la app",
+        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app",
         "Transfiera el saldo a su cuenta de Ualá para resolverlo",
-        "Resolver esto depende de usted Ingrese el saldo en la app",
+        "Resolver esto depende de usted. Ingrese el saldo en la app",
         "Es urgente ingresar saldo hoy en Ualá"
-    ];
+     ];
     return $r[array_rand($r)];
 }
 
@@ -110,23 +110,23 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
-    $respuesta = "Entendido Eliminamos tu número de nuestra base de gestión";
+    $respuesta = "Entendido. Eliminamos tu número de nuestra base de gestión";
 
 } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
-    $respuesta = "De nada estamos para ayudarte";
+    $respuesta = "De nada, estamos para ayudarte";
 
 } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "plan", "acuerdo"])) {
-    $respuesta = "No trabajamos con cuotas debe ingresar saldo en su app de Ualá";
+    $respuesta = "No trabajamos con cuotas, debe ingresar saldo en su app de Ualá";
 
 } elseif (contiene($message, ["ya pague", "pague", "saldad", "no debo", "no devo"])) {
-    $respuesta = "En las próximas horas actualizaremos nuestros registros Guíese por el saldo en la app de Ualá";
+    $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
 
 } elseif ($deudor) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
     if (!yaSaludoHoy($telefonoConPrefijo)) {
         $saludo = saludoHora();
-        $respuesta = "$saludo $nombre Soy Rodrigo abogado del Estudio Cuervo Abogados Le informamos que mantiene un saldo pendiente de \$$monto Ingrese saldo desde su app de Ualá para resolverlo";
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Ingrese saldo desde su app de Ualá para resolverlo";
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = urgenciaAleatoria();
@@ -160,22 +160,21 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
 
         $nombre = ucfirst(strtolower($encontrado["nombre"]));
         $saludo = saludoHora();
-        $respuesta = "$saludo $nombre Soy Rodrigo abogado del Estudio Cuervo Abogados Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]} Ingrese saldo desde su app de Ualá para resolverlo";
+        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]}. Ingrese saldo desde su app de Ualá para resolverlo";
         registrarVisita($telefonoConPrefijo);
     } else {
-        $respuesta = "Hola No encontramos deuda con ese DNI ¿Podrías verificar si está bien escrito";
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito";
     }
 
 } else {
     if (preg_match('/\b\d{7,9}\b/', $message)) {
-        $respuesta = "Hola No encontramos deuda con ese DNI ¿Podrías verificar si está bien escrito";
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito";
     } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
         $respuesta = urgenciaAleatoria();
     } else {
-        $respuesta = "Hola ¿Podrías indicarnos tu DNI para identificarte";
+        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte";
     }
 }
-
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
 exit;
