@@ -191,13 +191,6 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
         $saludo = saludoHora();
         $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]}. Ingrese saldo desde su app de Ualá para resolverlo.";
         registrarVisita($telefonoConPrefijo);
-    } else {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
-    }
-
-} else {
-    $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
-}
 
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
