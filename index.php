@@ -11,12 +11,11 @@ $app = $_POST["app"] ?? "";
 $sender = preg_replace('/\D/', '', $_POST["sender"] ?? "");
 $message = strtolower(trim($_POST["message"] ?? ""));
 
-// Normalizar número
 if (strlen($sender) < 10) exit(json_encode(["reply" => ""]));
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
 
-// Funciones auxiliares
+// Utilidades
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12) return "Buen día";
@@ -71,81 +70,48 @@ function buscarDeudor($telefono) {
     return null;
 }
 
-function urgenciaAleatoria() {
-    $r = [
-        "Le pedimos ingresar saldo hoy mismo desde su app de Ualá",
-        "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes",
-        "La deuda sigue vigente, regularícela desde su cuenta Ualá",
-        "Por favor, transfiera hoy mismo desde Ualá para evitar acciones",
-        "Le recordamos que puede resolver ingresando dinero en Ualá",
-        "Cumpla hoy con el ingreso pendiente en la app de Ualá",
-        "Para evitar consecuencias, haga una carga en su app Ualá",
-        "Resuelva esto hoy ingresando lo que pueda en su cuenta",
-        "El expediente sigue activo, le sugerimos transferir hoy mismo",
-        "Se requiere un ingreso inmediato desde su app de Ualá",
-        "No demore más, transfiera desde Ualá cuanto antes",
-        "Cierre esta gestión hoy mismo desde su cuenta Ualá",
-        "Con un ingreso hoy en Ualá, evita nuevas derivaciones",
-        "Sugerimos resolver esto ahora desde la app de Ualá",
-        "Debe ingresar saldo hoy para evitar pasos legales",
-        "El estudio le solicita una transferencia desde la app de Ualá",
-        "Hoy puede ser el último aviso, regularice en la app",
-        "Con una carga hoy desde Ualá, evita complicaciones",
-        "Aún está a tiempo de resolver, transfiera desde Ualá",
-        "No espere más, ingrese lo que pueda hoy mismo",
-        "El saldo sigue estando pendiente, transfiera en la app",
-        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app",
-        "Transfiera el saldo a su cuenta de Ualá para resolverlo",
-        "Resolver esto depende de usted. Ingrese el saldo en la app",
-        "Es urgente ingresar saldo hoy en Ualá"
+function cargarFrasesIniciales() {
+    return array_map("trim", file("frases_iniciales.txt"));
+}
+
+function getFrasePersonalizada($telefono, $nombre, $monto) {
+    $archivo = "uso_frases.json";
+    $frases = cargarFrasesIniciales();
+    $usadas = file_exists($archivo) ? json_decode(file_get_contents($archivo), true) : [];
+
+    if (!isset($usadas[$telefono])) $usadas[$telefono] = [];
+    $pendientes = array_diff($frases, $usadas[$telefono]);
+
+    if (empty($pendientes)) {
+        $usadas[$telefono] = [];
+        $pendientes = $frases;
+    }
+
+    $frase = $pendientes[array_rand($pendientes)];
+    $usadas[$telefono][] = $frase;
+    file_put_contents($archivo, json_encode($usadas));
+
+    $saludo = saludoHora();
+    $frase = str_replace(["$saludo", "$nombre", "$monto"], ["{saludo}", "{nombre}", "{monto}"], $frase);
+    return strtr($frase, [
+        "{saludo}" => saludoHora(),
+        "{nombre}" => ucfirst(strtolower($nombre)),
+        "{monto}" => "$" . $monto
+    ]);
+}
+
+function respuestaPorCategoria($categoria) {
+    $respuestas = [
+        "gracias" => ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto", "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte", "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"],
+        "cuotas" => ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá", "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app", "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá", "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda", "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"],
+        "sintrabajo" => ["Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá", "Sabemos que la situación puede ser difícil, pero necesitamos que ingrese un monto hoy desde la app de Ualá", "Aunque esté sin trabajo, le pedimos que realice una carga mínima en su cuenta Ualá para evitar gestiones"],
+        "problemaapp" => ["Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá", "Para problemas con la app, le recomendamos contactar al soporte de Ualá directamente", "Le sugerimos reiniciar la app o comunicarse con soporte de Ualá si persiste el problema"],
+        "urgencia" => ["Le pedimos ingresar saldo hoy mismo desde su app de Ualá", "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes", "La deuda sigue vigente, regularícela desde su cuenta Ualá", "Por favor, transfiera hoy mismo desde Ualá para evitar acciones", "Le recordamos que puede resolver ingresando dinero en Ualá", "Cumpla hoy con el ingreso pendiente en la app de Ualá", "Para evitar consecuencias, haga una carga en su app Ualá", "Resuelva esto hoy ingresando lo que pueda en su cuenta", "El expediente sigue activo, le sugerimos transferir hoy mismo", "Se requiere un ingreso inmediato desde su app de Ualá", "No demore más, transfiera desde Ualá cuanto antes", "Cierre esta gestión hoy mismo desde su cuenta Ualá", "Con un ingreso hoy en Ualá, evita nuevas derivaciones", "Sugerimos resolver esto ahora desde la app de Ualá", "Debe ingresar saldo hoy para evitar pasos legales", "El estudio le solicita una transferencia desde la app de Ualá", "Hoy puede ser el último aviso, regularice en la app", "Con una carga hoy desde Ualá, evita complicaciones", "Aún está a tiempo de resolver, transfiera desde Ualá", "No espere más, ingrese lo que pueda hoy mismo", "El saldo sigue estando pendiente, transfiera en la app", "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app", "Transfiera el saldo a su cuenta de Ualá para resolverlo", "Resolver esto depende de usted. Ingrese el saldo en la app", "Es urgente ingresar saldo hoy en Ualá"]
     ];
-    return $r[array_rand($r)];
+    return $respuestas[$categoria][array_rand($respuestas[$categoria])];
 }
 
-function respuestaGracias() {
-    $r = ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto",
-          "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte",
-          "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"];
-    return $r[array_rand($r)];
-}
-
-function respuestaNoCuotas() {
-    $r = ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá",
-          "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app",
-          "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá",
-          "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda",
-          "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"];
-    return $r[array_rand($r)];
-}
-
-function respuestaSinTrabajo() {
-    return "Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá";
-}
-
-function respuestaProblemaApp() {
-    return "Si tiene problemas para acceder a la app de Ualá, comuníquese con soporte de Ualá";
-}
-
-function respuestasAsociacion() {
-    return [
-        "%s, hemos asociado tu DNI correctamente. Detectamos un saldo pendiente de \$%s en Ualá. Por favor, ingrésalo desde la app. – Rodrigo",
-        "Hola %s. Tu usuario ya está vinculado a tu DNI. El monto pendiente es \$%s. Podés saldarlo desde la app de Ualá. – Rodrigo",
-        "Estimado %s, registro de DNI actualizado. Queda un saldo de \$%s por ingresar en tu cuenta Ualá. Ingrésalo cuando puedas. – Rodrigo",
-        "Buen día %s, tu DNI fue asociado con éxito. Tienes un saldo de \$%s en Ualá. Ingrésalo para resolverlo. – Rodrigo",
-        // …añadí tantas variantes como quieras…
-    ];
-}
-
-function respuestaAsociacion($telefono, $nombre, $monto) {
-    $tpls = respuestasAsociacion();
-    // si ya usás elegirFrase para controlar “hasta agotar”:
-    return elegirFrase($telefono, 'asociacion', array_map(
-        fn($t) => sprintf($t, $nombre, $monto),
-        $tpls
-    ));
-}
-
-// Procesamiento
+// Procesamiento principal
 $respuesta = "";
 
 if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
@@ -174,58 +140,37 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
         fputcsv($fp, ["asociar", $telefonoConPrefijo, $dni]);
         fclose($fp);
 
-        $nombre = ucfirst(strtolower($encontrado["nombre"]));
-        $saludo = saludoHora();
-        $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]}. Ingrese saldo desde su app de Ualá para resolverlo";
+        $respuesta = getFrasePersonalizada($telefonoConPrefijo, $encontrado["nombre"], $encontrado["deuda"]);
         registrarVisita($telefonoConPrefijo);
     } else {
         $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
-
 } else {
     $deudor = buscarDeudor($telefonoConPrefijo);
-
     if (contiene($message, ["equivocado", "no soy", "falleció", "fallecido", "murió", "número equivocado"])) {
         $fp = fopen("modificaciones.csv", "a");
         fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
         fclose($fp);
         $respuesta = "Ok, disculpe";
-
     } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
-        $respuesta = respuestaGracias();
-
+        $respuesta = respuestaPorCategoria("gracias");
     } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinanciación", "plan", "acuerdo"])) {
-        $respuesta = respuestaNoCuotas();
-
-    } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "sin empleo", "chagas", "desempleado", "desocupado"])) {
-        $respuesta = respuestaSinTrabajo();
-
+        $respuesta = respuestaPorCategoria("cuotas");
+    } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "sin empleo", "desempleado", "desocupado"])) {
+        $respuesta = respuestaPorCategoria("sintrabajo");
     } elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
-        $respuesta = respuestaProblemaApp();
-
+        $respuesta = respuestaPorCategoria("problemaapp");
     } elseif (contiene($message, ["ya pague", "pague", "saldada", "no debo", "no devo"])) {
         $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
-
-   if ($encontrado) {
-    // Sobrescribo CSV y registro modificación…
-    // … tu código de guardado …
-
-    // Ahora el aleatorio:
-    $nombre = ucfirst(strtolower($encontrado["nombre"]));
-    $monto  = $encontrado["deuda"];
-    $saludo = saludoHora();
-    $texto  = respuestaAsociacion($telefonoConPrefijo, $nombre, $monto);
-
-    $respuesta = "$saludo $texto";
-    registrarVisita($telefonoConPrefijo);
-}
-else {
-    $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
-}
-
+    } elseif ($deudor) {
+        if (!yaSaludoHoy($telefonoConPrefijo)) {
+            $respuesta = getFrasePersonalizada($telefonoConPrefijo, $deudor["nombre"], $deudor["deuda"]);
+            registrarVisita($telefonoConPrefijo);
+        } else {
+            $respuesta = respuestaPorCategoria("urgencia");
+        }
     } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
-        $respuesta = urgenciaAleatoria();
-
+        $respuesta = respuestaPorCategoria("urgencia");
     } else {
         $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
@@ -234,4 +179,3 @@ else {
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
 exit;
-?>
