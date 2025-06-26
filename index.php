@@ -96,7 +96,7 @@ elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "pl
 elseif (contiene($message, ["ya pague", "pague", "saldad", "no debo", "no devo"])) {
     $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo que figura en la app de Ualá.";
 }
-elseif ($deudor) {
+elif ($deudor) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
     if (!yaSaludoHoy($telefono)) {
@@ -141,8 +141,7 @@ elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     } else {
         $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
-}
-else {
+} else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
 }
 
