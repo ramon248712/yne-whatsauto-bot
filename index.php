@@ -160,11 +160,12 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
         } else {
             $respuesta = respuestaPorCategoria("urgencia");
         }
-    } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
-        $respuesta = respuestaPorCategoria("urgencia");
-    } else {
-        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
-    }
+   $contenidoLimpio = trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message));
+if (empty($message) || strlen($contenidoLimpio) < 3) {
+    $respuesta = respuestaPorCategoria("urgencia");
+} else {
+    $respuesta = respuestaPorCategoria("urgencia");
+}
 }
 
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
