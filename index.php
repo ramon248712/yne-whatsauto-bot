@@ -110,7 +110,7 @@ function urgenciaAleatoria() {
 $respuesta = "";
 $deudor = buscarDeudor($telefonoConPrefijo);
 
-if (contiene($message, ["equivocado", "numero equivocado"])) {
+if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
