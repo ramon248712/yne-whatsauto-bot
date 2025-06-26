@@ -178,7 +178,7 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinanciación", "plan", "acuerdo"])) {
         $respuesta = respuestaNoCuotas();
 
-    } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "desempleado", "desocupado"])) {
+    } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "sin empleo", "chagas", "desempleado", "desocupado"])) {
         $respuesta = respuestaSinTrabajo();
 
     } elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
