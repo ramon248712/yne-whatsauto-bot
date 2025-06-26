@@ -98,7 +98,7 @@ function urgenciaAleatoria() {
         "Transfiera el saldo a su cuenta de Ualá para resolverlo.",
         "Resolver esto depende de usted. Ingrese el saldo en la app.",
         "Es urgente ingresar saldo hoy en Ualá.",
-        ];
+     ];
     return $r[array_rand($r)];
 }
 // Procesamiento
@@ -179,8 +179,6 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
         $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
 }
-
-
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
 echo json_encode(["reply" => $respuesta]);
 exit;
