@@ -142,11 +142,11 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
 } else {
     $deudor = buscarDeudor($telefonoConPrefijo);
 
-    if (contiene($message, ["equivocado", "no soy", "número equivocado"])) {
+    if (contiene($message, ["equivocado", "no soy", "falleció", "fallecido", "murió", "número equivocado"])) {
         $fp = fopen("modificaciones.csv", "a");
         fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
         fclose($fp);
-        $respuesta = "Entendido. Eliminamos tu número de nuestra base de gestión";
+        $respuesta = "Ok, disculpe";
 
     } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
         $respuesta = "De nada, estamos para ayudarte";
