@@ -73,32 +73,32 @@ function buscarDeudor($telefono) {
 
 function urgenciaAleatoria() {
     $r = [
-        "Le pedimos ingresar saldo hoy mismo desde su app de Ualá",
-        "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes",
-        "La deuda sigue vigente, regularícela desde su cuenta Ualá",
-        "Por favor, transfiera hoy mismo desde Ualá para evitar acciones",
-        "Le recordamos que puede resolver ingresando dinero en Ualá",
-        "Cumpla hoy con el ingreso pendiente en la app de Ualá",
-        "Para evitar consecuencias, haga una carga en su app Ualá",
-        "Resuelva esto hoy ingresando lo que pueda en su cuenta",
-        "El expediente sigue activo, le sugerimos transferir hoy mismo",
-        "Se requiere un ingreso inmediato desde su app de Ualá",
-        "No demore más, transfiera desde Ualá cuanto antes",
-        "Cierre esta gestión hoy mismo desde su cuenta Ualá",
-        "Con un ingreso hoy en Ualá, evita nuevas derivaciones",
-        "Sugerimos resolver esto ahora desde la app de Ualá",
-        "Debe ingresar saldo hoy para evitar pasos legales",
-        "El estudio le solicita una transferencia desde la app de Ualá",
-        "Hoy puede ser el último aviso, regularice en la app",
-        "Con una carga hoy desde Ualá, evita complicaciones",
-        "Aún está a tiempo de resolver, transfiera desde Ualá",
-        "No espere más, ingrese lo que pueda hoy mismo",
-        "El saldo sigue estando pendiente, transfiera en la app",
-        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app",
-        "Transfiera el saldo a su cuenta de Ualá para resolverlo",
-        "Resolver esto depende de usted. Ingrese el saldo en la app",
-        "Es urgente ingresar saldo hoy en Ualá"
-    ];
+        "Le pedimos ingresar saldo hoy mismo desde su app de Ualá 💸",
+        "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes 🕐",
+        "La deuda sigue vigente, regularícela desde su cuenta Ualá 📄",
+        "Por favor, transfiera hoy mismo desde Ualá para evitar acciones 📤",
+        "Le recordamos que puede resolver ingresando dinero en Ualá 📲",
+        "Cumpla hoy con el ingreso pendiente en la app de Ualá 💰",
+        "Para evitar consecuencias, haga una carga en su app Ualá ⚠️",
+        "Resuelva esto hoy ingresando lo que pueda en su cuenta 🙏",
+        "El expediente sigue activo, le sugerimos transferir hoy mismo 📂",
+        "Se requiere un ingreso inmediato desde su app de Ualá ⏳",
+        "No demore más, transfiera desde Ualá cuanto antes 🚨",
+        "Cierre esta gestión hoy mismo desde su cuenta Ualá 🧾",
+        "Con un ingreso hoy en Ualá, evita nuevas derivaciones 🔁",
+        "Sugerimos resolver esto ahora desde la app de Ualá 📱",
+        "Debe ingresar saldo hoy para evitar pasos legales ⚖️",
+        "El estudio le solicita una transferencia desde la app de Ualá 🧑‍⚖️",
+        "Hoy puede ser el último aviso, regularice en la app 📍",
+        "Con una carga hoy desde Ualá, evita complicaciones 🧩",
+        "Aún está a tiempo de resolver, transfiera desde Ualá ⛑️",
+        "No espere más, ingrese lo que pueda hoy mismo ⏱️",
+        "El saldo sigue estando pendiente, transfiera en la app 📉",
+        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app 📬",
+        "Transfiera el saldo a su cuenta de Ualá para resolverlo 🔐",
+        "Resolver esto depende de usted. Ingrese el saldo en la app ✋",
+        "Es urgente ingresar saldo hoy en Ualá 🛑"
+      ];
     return $r[array_rand($r)];
 }
 
