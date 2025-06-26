@@ -98,8 +98,32 @@ function urgenciaAleatoria() {
         "Transfiera el saldo a su cuenta de Ualá para resolverlo",
         "Resolver esto depende de usted. Ingrese el saldo en la app",
         "Es urgente ingresar saldo hoy en Ualá"
-     ];
+    ];
     return $r[array_rand($r)];
+}
+
+function respuestaGracias() {
+    $r = ["De nada, estamos para ayudarte", "Un placer ayudarte", "Con gusto",
+          "Siempre a disposición", "Gracias a vos por comunicarte", "Estamos para ayudarte",
+          "Un gusto poder colaborar", "Cualquier cosa, escribinos", "Lo que necesites, consultanos"];
+    return $r[array_rand($r)];
+}
+
+function respuestaNoCuotas() {
+    $r = ["Entendemos que esté complicado. No trabajamos con planes, pero puede ingresar lo que pueda hoy desde Ualá",
+          "Le informamos que no manejamos acuerdos ni cuotas. El ingreso debe hacerse en la app",
+          "No ofrecemos cuotas. Le sugerimos hacer el esfuerzo hoy mismo desde Ualá",
+          "Para resolverlo, debe ingresar saldo desde su app. Incluso un monto parcial ayuda",
+          "Gracias por consultar. No hacemos acuerdos de pago, el ingreso es directo desde la app de Ualá"];
+    return $r[array_rand($r)];
+}
+
+function respuestaSinTrabajo() {
+    return "Entendemos que esté sin trabajo. Le pedimos que igual haga el esfuerzo de ingresar lo que pueda hoy desde Ualá";
+}
+
+function respuestaProblemaApp() {
+    return "Si tiene problemas para acceder a la app de Ualá, comuníquese con su soporte de Ualá";
 }
 
 // Procesamiento
@@ -149,10 +173,16 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
         $respuesta = "Ok, disculpe";
 
     } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
-        $respuesta = "De nada, estamos para ayudarte";
+        $respuesta = respuestaGracias();
 
     } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinanciación", "plan", "acuerdo"])) {
-        $respuesta = "No trabajamos con cuotas, debe ingresar saldo en su app de Ualá";
+        $respuesta = respuestaNoCuotas();
+
+    } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "desempleado", "desocupado"])) {
+        $respuesta = respuestaSinTrabajo();
+
+    } elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
+        $respuesta = respuestaProblemaApp();
 
     } elseif (contiene($message, ["ya pague", "pague", "saldada", "no debo", "no devo"])) {
         $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
