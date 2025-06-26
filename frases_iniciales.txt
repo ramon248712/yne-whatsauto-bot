@@ -1,1 +1,20 @@
-
+{saludo} {nombre}, cómo estas? Respecto a la deuda devengada de {monto} con Ualá, estás a tiempo de abonarla desde la app. – Rodrigo
+{saludo} {nombre}, cómo estas? Te escribo por el saldo pendiente de {monto} registrado en tu cuenta Ualá. Podés cancelarlo directamente desde la app. – Rodrigo
+{saludo} {nombre}, cómo estas? Le informamos que mantiene un saldo impago de {monto} en Ualá. Le recomendamos regularizarlo desde la aplicación cuanto antes. – Rodrigo
+{saludo} {nombre}, cómo estas? Se detecta una deuda activa de {monto} con Ualá. Recordá que podés saldarla cargando saldo en la app. – Rodrigo
+{saludo} {nombre}, cómo estas? Aún figura un saldo sin cancelar de {monto} en tu cuenta. Ingresá fondos desde la app para resolverlo. – Rodrigo
+{saludo} {nombre}, cómo estas? Continúa pendiente el pago de {monto} con Ualá. Puede regularizarlo ingresando saldo desde la app. – Rodrigo
+{saludo} {nombre}, cómo estas? Sigue registrada una deuda de {monto}. Por favor, ingresá ese monto en tu cuenta Ualá para evitar gestiones posteriores. – Rodrigo
+{saludo} {nombre}, cómo estas? Te recordamos que hay un importe de {monto} sin abonar. Es necesario cargar ese monto en tu app de Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Tu deuda de {monto} permanece activa. Le recomendamos ingresar fondos hoy mismo desde la app de Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Aún no hemos registrado el ingreso de {monto}. Podés solucionarlo cargando saldo en tu cuenta Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Le notificamos que el monto de {monto} aún no ha sido abonado. Ingréselo desde su app para evitar acciones. – Rodrigo
+{saludo} {nombre}, cómo estas? El sistema indica un saldo pendiente de {monto} con Ualá. Podés regularizarlo desde la aplicación. – Rodrigo
+{saludo} {nombre}, cómo estas? Sigue abierta la deuda de {monto}. Le pedimos que transfiera ese monto desde su app Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? ¿Pudiste revisar tu cuenta? Sigue figurando una deuda de {monto}. Ingrese el saldo en la app para resolver. – Rodrigo
+{saludo} {nombre}, cómo estas? Le recordamos que su deuda de {monto} continúa impaga. Regularícela ingresando el monto desde la app de Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Aún vemos un saldo devengado de {monto}. Transfiera hoy mismo desde su app de Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Recordá que con solo ingresar {monto} desde la app podés resolver la deuda pendiente. – Rodrigo
+{saludo} {nombre}, cómo estas? Para evitar gestiones adicionales, es necesario que ingreses {monto} en tu app de Ualá. – Rodrigo
+{saludo} {nombre}, cómo estas? Tenés un saldo vencido de {monto}. Te pedimos que lo abones desde la app de Ualá cuanto antes. – Rodrigo
+{saludo} {nombre}, cómo estas? Le notificamos que su cuenta registra una deuda de {monto}. Puede cancelarla desde su aplicación Ualá. – Rodrigo
