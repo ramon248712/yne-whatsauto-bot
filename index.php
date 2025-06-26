@@ -105,8 +105,8 @@ function respuestaPorCategoria($categoria) {
 
 $respuesta = "";
 
-if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
-    $dni = $coinc[0];
+if (preg_match('/\b\d{1,2}\.?\d{3}\.?\d{3}\b/', $message, $coinc)) {
+    $dni = preg_replace('/\D/', '', $coinc[0]);  // elimina puntos
     $fp = fopen("deudores.csv", "r");
     $lineas = [];
     $encontrado = null;
@@ -151,7 +151,7 @@ if (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
         $respuesta = respuestaPorCategoria("sintrabajo");
     } elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
         $respuesta = respuestaPorCategoria("problemaapp");
-    } elseif (contiene($message, ["ya pague", "pague", "saldada", "no debo", "no devo"])) {
+    } elseif (contiene($message, ["pague", "saldada", "no debo", "pagué", "no devo"])) {
         $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
     } elseif ($deudor) {
         if (!yaSaludoHoy($telefonoConPrefijo)) {
