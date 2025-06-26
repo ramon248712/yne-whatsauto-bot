@@ -157,8 +157,6 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
     // Si el mensaje está vacío o parece multimedia (sticker/audio/etc), responder con urgencia
     if (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
         $respuesta = urgenciaAleatoria();
-    } else {
-        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
 }
 
