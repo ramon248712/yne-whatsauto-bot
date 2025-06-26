@@ -13,7 +13,8 @@ $message = strtolower(trim($_POST["message"] ?? ""));
 if (strlen($sender) < 10) exit(json_encode(["reply" => ""]));
 $telefonoConPrefijo = "+549" . substr($sender, -10);
 
-// === FUNCIONES AUXILIARES ===
+// ——— Funciones auxiliares ———
+
 function saludoHora() {
     $h = (int)date("H");
     if ($h >= 6 && $h < 12)  return "Buen día";
@@ -28,7 +29,7 @@ function contiene($msg, $palabras) {
     return false;
 }
 
-// Tracker “hasta agotar” en CSV
+// Track “hasta agotar” en frases_usadas.csv
 function elegirFrase($telefono, $tipo, array $frases) {
     $file = "frases_usadas.csv";
     $usos = [];
@@ -43,13 +44,12 @@ function elegirFrase($telefono, $tipo, array $frases) {
     $usadas = $usos[$telefono][$tipo] ?? [];
     $todos  = range(0, count($frases) - 1);
     $disp   = array_diff($todos, $usadas);
-
     if (empty($disp)) {
         $usadas = [];
         $disp   = $todos;
     }
 
-    $idx      = array_values($disp)[array_rand($disp)];
+    $idx = array_values($disp)[array_rand($disp)];
     $usadas[] = $idx;
     $usos[$telefono][$tipo] = $usadas;
 
@@ -65,7 +65,7 @@ function elegirFrase($telefono, $tipo, array $frases) {
     return $frases[$idx];
 }
 
-// Registro de saludos diarios
+// Registro de saludo único por día
 function registrarVisita($tel) {
     file_put_contents("visitas.csv", "$tel|" . date("Y-m-d") . "\n", FILE_APPEND);
 }
@@ -78,7 +78,7 @@ function yaSaludoHoy($tel) {
     return false;
 }
 
-// Búsqueda de deudor
+// Búsqueda de deudor en deudores.csv (formato: nombre;dni;telefono;deuda)
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
@@ -89,10 +89,10 @@ function buscarDeudor($tel) {
             if ($c === $base) {
                 fclose($fp);
                 return [
-                    "nombre"   => $row[0],
-                    "dni"      => $row[1],
+                    "nombre" => $row[0],
+                    "dni"    => $row[1],
                     "telefono" => $row[2],
-                    "deuda"    => $row[3]
+                    "deuda"  => $row[3]
                 ];
             }
         }
@@ -101,11 +101,12 @@ function buscarDeudor($tel) {
     return null;
 }
 
-// === BANCOS DE FRASES ===
+// ——— Bancos de frases ———
+
 function respuestasIniciales() {
     return [
         "%s, ¿cómo estás? Respecto a la deuda devengada de \$%s con Ualá, estás a tiempo de abonarla desde la app. – Rodrigo",
-        "Te escribo por el saldo pendiente de \$%s registrado en tu cuenta Ualá. Podés cancelarlo desde la app. – Rodrigo",
+        "Te escribo por el saldo pendiente de \$%s registrado en tu cuenta Ualá. Podés cancelarlo directamente desde la app. – Rodrigo",
         "Le informamos que mantiene un saldo impago de \$%s en Ualá. Recomendamos regularizarlo cuanto antes. – Rodrigo",
         "Se detecta una deuda activa de \$%s con Ualá. Recordá que podés saldarla cargando saldo en la app. – Rodrigo",
         "Aún figura un saldo sin cancelar de \$%s en tu cuenta. Ingresá fondos desde la app para resolverlo. – Rodrigo",
@@ -128,9 +129,36 @@ function respuestasIniciales() {
 }
 
 function urgenciaAleatoria($tel) {
-    $f = include "frases_urgencia.php";
-    return elegirFrase($tel, "urgencia", $f);
+    $r = [
+        "Le pedimos ingresar saldo hoy mismo desde su app de Ualá",
+        "Evite nuevas gestiones, ingrese un monto en Ualá cuanto antes",
+        "La deuda sigue vigente, regularícela desde su cuenta Ualá",
+        "Por favor, transfiera hoy mismo desde Ualá para evitar acciones",
+        "Le recordamos que puede resolver ingresando dinero en Ualá",
+        "Cumpla hoy con el ingreso pendiente en la app de Ualá",
+        "Para evitar consecuencias, haga una carga en su app Ualá",
+        "Resuelva esto hoy ingresando lo que pueda en su cuenta",
+        "El expediente sigue activo, le sugerimos transferir hoy mismo",
+        "Se requiere un ingreso inmediato desde su app de Ualá",
+        "No demore más, transfiera desde Ualá cuanto antes",
+        "Cierre esta gestión hoy mismo desde su cuenta Ualá",
+        "Con un ingreso hoy en Ualá, evita nuevas derivaciones",
+        "Sugerimos resolver esto ahora desde la app de Ualá",
+        "Debe ingresar saldo hoy para evitar pasos legales",
+        "El estudio le solicita una transferencia desde la app de Ualá",
+        "Hoy puede ser el último aviso, regularice en la app",
+        "Con una carga hoy desde Ualá, evita complicaciones",
+        "Aún está a tiempo de resolver, transfiera desde Ualá",
+        "No espere más, ingrese lo que pueda hoy mismo",
+        "El saldo sigue estando pendiente, transfiera en la app",
+        "Le pedimos prioridad con esta gestión. Ingrese hoy el saldo en la app",
+        "Transfiera el saldo a su cuenta de Ualá para resolverlo",
+        "Resolver esto depende de usted. Ingrese el saldo en la app",
+        "Es urgente ingresar saldo hoy en Ualá"
+    ];
+    return elegirFrase($tel, "urgencia", $r);
 }
+
 function respuestaGracias($tel) {
     $r = [
         "De nada, estamos para ayudarte",
@@ -145,6 +173,7 @@ function respuestaGracias($tel) {
     ];
     return elegirFrase($tel, "gracias", $r);
 }
+
 function respuestaNoCuotas($tel) {
     $r = [
         "Entendemos que esté complicado. No trabajamos con planes, pero podés ingresar lo que puedas hoy desde Ualá",
@@ -155,6 +184,7 @@ function respuestaNoCuotas($tel) {
     ];
     return elegirFrase($tel, "cuotas", $r);
 }
+
 function respuestaSinTrabajo($tel) {
     $r = [
         "Entendemos que estés sin trabajo. Te pedimos que ingreses lo que puedas hoy desde la app",
@@ -163,6 +193,7 @@ function respuestaSinTrabajo($tel) {
     ];
     return elegirFrase($tel, "sintrabajo", $r);
 }
+
 function respuestaProblemaApp($tel) {
     $r = [
         "Si tenés problemas para acceder a la app de Ualá, comunicate con soporte de Ualá",
@@ -172,18 +203,18 @@ function respuestaProblemaApp($tel) {
     return elegirFrase($tel, "app", $r);
 }
 
-// === LÓGICA PRINCIPAL ===
+// ——— Procesamiento ———
 $respuesta = "";
 
-if (contiene($message, ["equivocado", "no soy", "falleció", "murió", "número equivocado"])) {
+if (contiene($message, ["equivocado", "no soy", "falleció", "fallecido", "murió", "número equivocado"])) {
     file_put_contents("modificaciones.csv", "eliminar|$telefonoConPrefijo\n", FILE_APPEND);
     $respuesta = "Ok, disculpe";
 }
 elseif (preg_match('/\b\d{7,9}\b/', $message, $m)) {
-    // asociación DNI–teléfono
+    // Asociación DNI–teléfono
     $respuesta = "Hola";
 }
-elseif (contiene($message, ["gracia", "gracias"])) {
+elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = respuestaGracias($telefonoConPrefijo);
 }
 elseif (contiene($message, ["cuota", "cuotas", "plan", "refinanc"])) {
@@ -192,18 +223,18 @@ elseif (contiene($message, ["cuota", "cuotas", "plan", "refinanc"])) {
 elseif (contiene($message, ["sin trabajo", "desemple", "desocup"])) {
     $respuesta = respuestaSinTrabajo($telefonoConPrefijo);
 }
-elseif (contiene($message, ["no anda la app", "no puedo ingresar", "uala no funciona"])) {
+elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
     $respuesta = respuestaProblemaApp($telefonoConPrefijo);
 }
 else {
-    $d = buscarDeudor($telefonoConPrefijo);
-    if ($d) {
+    $deudor = buscarDeudor($telefonoConPrefijo);
+    if ($deudor) {
         if (!yaSaludoHoy($telefonoConPrefijo)) {
             registrarVisita($telefonoConPrefijo);
-            $nom  = ucfirst(strtolower($d["nombre"]));
-            $mon  = $d["deuda"];
+            $nom  = ucfirst(strtolower($deudor["nombre"]));
+            $mon  = $deudor["deuda"];
             $tpls = respuestasIniciales();
-            $fmt  = array_map(fn($t)=>sprintf($t, $nom, $mon), $tpls);
+            $fmt  = array_map(fn($t) => sprintf($t, $nom, $mon), $tpls);
             $base = elegirFrase($telefonoConPrefijo, "inicial", $fmt);
             $respuesta = saludoHora() . " " . $base;
         } else {
