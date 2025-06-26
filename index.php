@@ -106,7 +106,7 @@ function urgenciaAleatoria() {
 $respuesta = "";
 $deudor = buscarDeudor($telefonoConPrefijo);
 
-if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
+if (contiene($message, ["equivocado", "no soy", "número equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
@@ -115,10 +115,10 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
 } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = "De nada, estamos para ayudarte";
 
-} elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "plan", "acuerdo"])) {
+} elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinanciación", "plan", "acuerdo"])) {
     $respuesta = "No trabajamos con cuotas, debe ingresar saldo en su app de Ualá";
 
-} elseif (contiene($message, ["ya pague", "pague", "saldad", "no debo", "no devo"])) {
+} elseif (contiene($message, ["ya pague", "pague", "saldada", "no debo", "no devo"])) {
     $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
 
 } elseif ($deudor) {
@@ -163,16 +163,16 @@ if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
         $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \${$encontrado["deuda"]}. Ingrese saldo desde su app de Ualá para resolverlo";
         registrarVisita($telefonoConPrefijo);
     } else {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito";
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
 
 } else {
     if (preg_match('/\b\d{7,9}\b/', $message)) {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito";
+        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     } elseif (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
         $respuesta = urgenciaAleatoria();
     } else {
-        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte";
+        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
 }
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
