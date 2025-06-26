@@ -131,7 +131,7 @@ function urgenciaAleatoria() {
 $respuesta = "";
 $deudor = buscarDeudor($telefonoConPrefijo);
 
-if (contiene($message, ["equivocado", "numero equivocado"])) {
+if (contiene($message, ["equivocado", "no soy", "numero equivocado"])) {
     $fp = fopen("modificaciones.csv", "a");
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
@@ -153,9 +153,15 @@ if (contiene($message, ["equivocado", "numero equivocado"])) {
         $saludo = saludoHora();
         $respuesta = "$saludo $nombre. Soy Rodrigo, abogado del Estudio Cuervo Abogados. Le informamos que mantiene un saldo pendiente de \$$monto. Ingrese saldo desde su app de Ualá para resolverlo.";
         registrarVisita($telefonoConPrefijo);
-    } else {
+  } else {
+    // Si el mensaje está vacío o parece multimedia (sticker/audio/etc), responder con urgencia
+    if (empty($message) || strlen(trim(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $message))) < 3) {
         $respuesta = urgenciaAleatoria();
+    } else {
+        $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
     }
+}
+
 
 } elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
