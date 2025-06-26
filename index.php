@@ -51,10 +51,14 @@ function registrarVisita($telefono) {
 function buscarDeudor($tel) {
     if (!file_exists("deudores.csv")) return null;
     $fp = fopen("deudores.csv", "r");
+    $telFinal = substr(preg_replace('/\D/', '', $tel), -10); // últimos 10 dígitos
     while (($line = fgetcsv($fp)) !== false) {
-        if (count($line) >= 4 && substr(preg_replace('/\D/', '', $line[2]), -10) === substr($tel, -10)) {
-            fclose($fp);
-            return ["nombre" => $line[0], "dni" => $line[1], "telefono" => $line[2], "deuda" => $line[3]];
+        if (count($line) >= 4) {
+            $telCSV = substr(preg_replace('/\D/', '', $line[2]), -10);
+            if ($telCSV === $telFinal) {
+                fclose($fp);
+                return ["nombre" => $line[0], "dni" => $line[1], "telefono" => $line[2], "deuda" => $line[3]];
+            }
         }
     }
     fclose($fp);
