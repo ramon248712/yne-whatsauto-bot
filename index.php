@@ -1,17 +1,17 @@
 <?php
 // Configuración general
-date_default_timezone_set("America/Argentina/Buenos_Aires");
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
+date_default_timezone_set("America/Argentina/Buenos_Aires");
 header('Content-Type: application/json');
 
-// Datos del POST
+// Capturar datos
 $app = $_POST["app"] ?? "";
 $sender = preg_replace('/\D/', '', $_POST["sender"] ?? "");
 $message = strtolower(trim($_POST["message"] ?? ""));
 
-// Validación básica del número
+// Normalizar número
 if (strlen($sender) < 10) exit(json_encode(["reply" => ""]));
 $telefonoBase = substr($sender, -10);
 $telefonoConPrefijo = "+549" . $telefonoBase;
@@ -72,19 +72,59 @@ function buscarDeudor($telefono) {
 }
 
 function urgenciaAleatoria() {
-    $mensajes = [
-        "LE RECORDAMOS INGRESAR SALDO HOY MISMO EN UALA PARA EVITAR GESTIONES",
-        "LE INFORMAMOS QUE SU DEUDA SIGUE ACTIVA REGULARICE HOY EN UALA",
-        "CUMPLA CON EL INGRESO DE SALDO EN LA APP PARA EVITAR CONSECUENCIAS",
-        "SE REQUIERE INGRESO DE SALDO URGENTE EN UALA",
-        "EVITE COMPLICACIONES INGRESE DINERO EN UALA HOY",
-        "CARGUE SALDO EN SU CUENTA DE UALA PARA SALDAR LA DEUDA",
-        "REALICE LA TRANSFERENCIA EN SU APP DE UALA A LA BREVEDAD",
-        "RECUERDE ABONAR INGRESANDO SALDO EN UALA",
-        "EVITE PROBLEMAS FUTUROS CARGANDO FONDOS HOY MISMO",
-        "REGULARICE LA DEUDA INGRESANDO SALDO EN UALA YA"
+    $r = [
+        "por favor ingresá saldo en la app de ualá hoy mismo para evitar complicaciones",
+        "recordá regularizar tu situación ingresando fondos desde ualá",
+        "te pedimos que transfieras hoy mismo desde tu cuenta de ualá",
+        "es importante que ingreses un monto hoy mismo desde ualá",
+        "cualquier ingreso desde ualá ayuda a reducir tu deuda",
+        "tu situación sigue activa, te sugerimos ingresar dinero cuanto antes",
+        "evitá gestiones adicionales ingresando saldo en ualá",
+        "no postergues más, ingresá lo que puedas desde la app de ualá",
+        "cumplí con el ingreso desde ualá para evitar más avisos",
+        "regularizá tu saldo cuanto antes desde la app",
+        "recordá que el ingreso se hace por la app de ualá a tu cvu",
+        "te sugerimos ingresar un monto hoy mismo desde ualá",
+        "el saldo sigue pendiente, resolvelo desde ualá",
+        "sumá saldo hoy desde ualá y evitá consecuencias",
+        "te recordamos ingresar cualquier monto hoy para reducir tu deuda",
+        "una transferencia en ualá ayuda a resolver esto cuanto antes",
+        "el saldo sigue sin regularizar, por favor ingresá desde ualá",
+        "te recomendamos hacer un esfuerzo y cargar dinero hoy",
+        "ingresá dinero hoy desde ualá para frenar nuevas gestiones",
+        "tu caso sigue activo, resolvelo ingresando saldo",
+        "no dejes pasar el día, ingresá fondos desde ualá",
+        "cualquier monto ayuda, hacelo desde tu cuenta en ualá",
+        "evitá más contactos ingresando saldo hoy mismo",
+        "regularizá cuanto antes desde tu app de ualá",
+        "cumplí hoy con una transferencia desde ualá",
+        "abonar es simple, hacelo por ualá desde tu celular",
+        "la deuda sigue vigente, ingresá un monto desde ualá",
+        "es importante resolver esto hoy desde ualá",
+        "por favor realizá la transferencia hoy desde tu cuenta",
+        "todo se resuelve ingresando dinero hoy mismo",
+        "sumá saldo y quedás al día con el estudio",
+        "no ignores este mensaje, hacé la carga desde ualá",
+        "tu cvu está esperando una carga desde ualá",
+        "hoy es un buen día para ponerte al día desde ualá",
+        "cargá saldo cuanto antes para evitar nuevos avisos",
+        "es simple: ualá, tu cuenta, tu solución",
+        "no hay excusas, resolvelo desde ualá hoy",
+        "cumplí con lo pendiente cargando saldo",
+        "no ignores esta oportunidad de resolverlo",
+        "la deuda sigue vigente, podés empezar con poco",
+        "te invitamos a resolverlo ingresando saldo",
+        "tu saldo pendiente puede resolverse en minutos",
+        "una acción hoy evita problemas mañana",
+        "podés resolverlo sin contacto humano: usá ualá",
+        "sabemos que podés, hacé la carga hoy",
+        "cumplí con el ingreso hoy desde la app",
+        "tu compromiso es importante, cargá saldo",
+        "estás a un paso de resolverlo con ualá",
+        "ingresá un monto hoy y bajá el saldo",
+        "resolvé ya desde tu app de ualá"
     ];
-    return $mensajes[array_rand($mensajes)];
+    return $r[array_rand($r)];
 }
 
 // Procesamiento
@@ -96,12 +136,16 @@ if (contiene($message, ["equivocado", "numero equivocado"])) {
     fputcsv($fp, ["eliminar", $telefonoConPrefijo]);
     fclose($fp);
     $respuesta = "Entendido. Eliminamos tu número de nuestra base de gestión.";
+
 } elseif (contiene($message, ["gracia", "gracias", "graciah"])) {
     $respuesta = "De nada, estamos para ayudarte.";
+
 } elseif (contiene($message, ["cuota", "cuotas", "refinanciar", "refinansiar", "plan", "acuerdo"])) {
     $respuesta = "No trabajamos con cuotas, debe ingresar saldo en su app de Ualá.";
+
 } elseif (contiene($message, ["ya pague", "pague", "saldad", "no debo", "no devo"])) {
     $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá.";
+
 } elseif ($deudor) {
     $nombre = ucfirst(strtolower($deudor["nombre"]));
     $monto = $deudor["deuda"];
@@ -112,6 +156,7 @@ if (contiene($message, ["equivocado", "numero equivocado"])) {
     } else {
         $respuesta = urgenciaAleatoria();
     }
+
 } elseif (preg_match('/\b\d{7,9}\b/', $message, $coinc)) {
     $dni = $coinc[0];
     $fp = fopen("deudores.csv", "r");
@@ -145,6 +190,7 @@ if (contiene($message, ["equivocado", "numero equivocado"])) {
     } else {
         $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
+
 } else {
     $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
 }
