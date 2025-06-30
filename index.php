@@ -171,6 +171,5 @@ if (preg_match('/\b\d{1,2}\.?\d{3}\.?\d{3}\b/', $message, $coinc)) {
 }
 
 file_put_contents("historial.txt", date("Y-m-d H:i") . " | $sender => $message\n", FILE_APPEND);
-sleep(2); // Espera 2 segundos antes de responder
 echo json_encode(["reply" => $respuesta]);
 exit;
