@@ -149,10 +149,10 @@ if (preg_match('/\b\d{1,2}\.?\d{3}\.?\d{3}\b/', $message, $coinc)) {
         $respuesta = respuestaPorCategoria("cuotas");
     } elseif (contiene($message, ["sin trabajo", "no tengo trabajo", "sin empleo", "desempleado", "desocupado"])) {
         $respuesta = respuestaPorCategoria("sintrabajo");
-    } elseif (contiene($message, ["no anda la app", "no puedo entrar", "uala no funciona", "no puedo ingresar", "uala no me deja", "uala no abre", "uala no carga"])) {
+    } elseif (contiene($message, ["no anda la app", "no puedo entrar", "no funciona", "no puedo ingresar", "no me deja", "no abre", "no carga"])) {
         $respuesta = respuestaPorCategoria("problemaapp");
     } elseif (contiene($message, ["pague", "saldada", "no debo", "ingresé", "pagué", "no devo"])) {
-        $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app de Ualá";
+        $respuesta = "En las próximas horas actualizaremos nuestros registros. Guíese por el saldo en la app";
     } elseif ($deudor) {
         if (!yaSaludoHoy($telefonoConPrefijo)) {
             $respuesta = getFrasePersonalizada($telefonoConPrefijo, $deudor["nombre"], $deudor["deuda"]);
