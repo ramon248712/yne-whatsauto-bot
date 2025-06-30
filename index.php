@@ -134,7 +134,7 @@ if (preg_match('/\b\d{1,2}\.?\d{3}\.?\d{3}\b/', $message, $coinc)) {
         $respuesta = getFrasePersonalizada($telefonoConPrefijo, $encontrado["nombre"], $encontrado["deuda"]);
         registrarVisita($telefonoConPrefijo);
     } else {
-        $respuesta = "Hola. No encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
+        $respuesta = "Disculpe, no encontramos deuda con ese DNI. ¿Podrías verificar si está bien escrito?";
     }
 } else {
     $deudor = buscarDeudor($telefonoConPrefijo);
