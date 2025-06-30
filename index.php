@@ -165,7 +165,7 @@ if (preg_match('/\b\d{1,2}\.?\d{3}\.?\d{3}\b/', $message, $coinc)) {
         if (empty($message) || strlen($contenidoLimpio) < 3) {
             $respuesta = respuestaPorCategoria("urgencia");
         } else {
-            $respuesta = "Hola. ¿Podrías indicarnos tu DNI para identificarte?";
+            $respuesta = "Hola. ¿Podrías indicarnos tu DNI (sin puntos) para identificarte?";
         }
     }
 }
