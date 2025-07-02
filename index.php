@@ -92,7 +92,7 @@ function getFrasePersonalizada($telefono, $nombre, $monto) {
 
     return strtr($frase, [
         "{saludo}" => saludoHora(),
-        "{nombre}" => ucfirst(strtolower($nombre)),
+        "{nombre}" => mb_convert_case($nombre, MB_CASE_TITLE, "UTF-8"),
         "{monto}" => "$" . $monto
     ]);
 }
